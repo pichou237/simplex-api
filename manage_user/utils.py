@@ -7,13 +7,15 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from .models import OneTimePasscode
 from django.db import IntegrityError
+from lebricoleur.celery import app
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 def generate_otp(length=6):
     return ''.join(str(random.randint(1, 9)) for _ in range(length))
-
+@app.task
 def send_otp_email(user):
     try:
         logger.info(f"Valeur de user reçue : {user}")

@@ -1,4 +1,4 @@
-from .models import User, OneTimePasscode
+from .models import User, OneTimePasscode,Technician
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -72,3 +72,21 @@ class UserLoginSerializer(serializers.ModelSerializer):
             'refresh_token': str(tokens.get('refresh')),
         }
 
+# class TechnicianSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Technician
+#         fields = [
+#             'email', 'first_name', 'last_name', 'phone_number', 'city', 
+#             'address', 'district', 'profession', 'photos', 'description', 'is_verified'
+#         ]
+#         read_only_fields = ['is_verified'] 
+
+#     def validate_phone_number(self, value):
+#         if not value.isdigit() or len(value) not in [10, 13]:  
+#             raise serializers.ValidationError("Numéro de téléphone invalide.")
+#         return value
+
+#     def validate_photos(self, value):
+#         if value and value.size > 2 * 1024 * 1024:  
+#             raise serializers.ValidationError("L'image est trop grande (max 2 Mo).")
+#         return value

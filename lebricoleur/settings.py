@@ -26,6 +26,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ix)hfon(omvnklm&sp!o-#y84hc_r*%-1#d#j(zqp!y9x(_*=e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+
+ENV = 'test'
 DEBUG = True
 
 ALLOWED_HOSTS = []
@@ -116,12 +118,27 @@ WSGI_APPLICATION = 'lebricoleur.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+if ENV=="dev":
+         
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': config('PG_DBNAME'),
+                'USER': config('PG_USER'),
+                'PASSWORD': config('PG_PASSWORD'),
+                'HOST': config('PG_HOST'),
+                'PORT': config('PG_PORT'),
+            }
+        }
+else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+    
+
 
 
 # Password validation

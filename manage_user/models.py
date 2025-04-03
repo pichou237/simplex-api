@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, Group
 from django.utils.translation import gettext_lazy as _
 from .manager import UserManager
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from .enums import TechnicianProfession,TechnicianStatus
 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
@@ -15,8 +15,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     address = models.TextField(verbose_name=_("address"), null=True, blank=True)
     district = models.CharField(verbose_name="quartier",max_length=255)
     is_staff = models.BooleanField(default=False)
-    is_verified = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
     
     
     groups = models.ManyToManyField(Group, related_name="custom_user_groups", blank=True)
@@ -48,3 +46,15 @@ class OneTimePasscode(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.first_name}-passcode"
+
+
+# class Technician(models.Model):
+#     user = models.OneToOneField(User,on_delete=models.CASCADE)
+#     profession = models.CharField(choices=TechnicianProfession.choices,)
+#     photos= models.ImageField()
+#     description = models.TextField(max_length=5000)
+#     is_verified = models.BooleanField(default=False)
+   
+
+
+
