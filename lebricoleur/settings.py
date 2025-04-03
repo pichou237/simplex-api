@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
+import os
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,8 +29,41 @@ SECRET_KEY = 'django-insecure-ix)hfon(omvnklm&sp!o-#y84hc_r*%-1#d#j(zqp!y9x(_*=e
 DEBUG = True
 
 ALLOWED_HOSTS = []
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+SECURE_HSTS_PRELOAD = False
 
 
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',  
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny', 
+    ),
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
 # Application definition
 
 INSTALLED_APPS = [
@@ -55,11 +91,13 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'lebricoleur.urls'
+AUTH_USER_MODEL = 'manage_user.User'
+
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR/"templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -126,3 +164,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+EMAIL_PORT = config("EMAIL_PORT")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS")
