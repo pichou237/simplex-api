@@ -1,4 +1,4 @@
-from .models import User, OneTimePasscode,Technician
+from .models import User, OneTimePasscode
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
