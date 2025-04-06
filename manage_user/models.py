@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, Group
 from django.utils.translation import gettext_lazy as _
 from .manager import UserManager
 from rest_framework_simplejwt.tokens import RefreshToken
+from.enums import TechnicianProfession
 # from .enums import TechnicianProfession,TechnicianStatus
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -10,11 +11,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(verbose_name=_('email address'), max_length=255, unique=True)
     first_name = models.CharField(max_length=255, verbose_name=_("first name"))
     last_name = models.CharField(max_length=255, verbose_name=_("last name"), null=True, blank=True)
-    phone_number = models.CharField(max_length=20, verbose_name=_("phone number"), null=False, blank=True)  # Updated field
+    phone_number = models.CharField(max_length=20, verbose_name=_("phone number"), null=False, blank=True)  
     city = models.CharField(max_length=255, verbose_name=_("city"), null=True, blank=True)
     address = models.TextField(verbose_name=_("address"), null=True, blank=True)
     district = models.CharField(verbose_name="quartier",max_length=255)
     is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_superuser = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
+
     
     
     groups = models.ManyToManyField(Group, related_name="custom_user_groups", blank=True)
@@ -48,12 +53,18 @@ class OneTimePasscode(models.Model):
         return f"{self.user.first_name}-passcode"
 
 
-# class Technician(models.Model):
-#     user = models.OneToOneField(User,on_delete=models.CASCADE)
-#     profession = models.CharField(choices=TechnicianProfession.choices,)
-#     photos= models.ImageField()
-#     description = models.TextField(max_length=5000)
-#     is_verified = models.BooleanField(default=False)
+class Technician(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE)
+    profession = models.CharField(choices=TechnicianProfession.choices,max_length=100)
+    description = models.TextField(max_length=5000,verbose_name=_("decrivez votre job ici"))
+    is_verified = models.BooleanField(default=False)
+    def __str__(self) -> str:
+        return f"{self.user.first_name}-{self.profession}"
+    
+class Client(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE)
+    
+
    
 
 

@@ -1,4 +1,8 @@
 from rest_framework import permissions
+from rest_framework.permissions import BasePermission
+from rest_framework.exceptions import PermissionDenied
+from django.utils.translation import gettext as _
+
 
 class IsStaff(permissions.BasePermission):
     def has_permission(self, request, obj=None):
@@ -20,3 +24,14 @@ class IsManager(permissions.BasePermission):
             return True
         print(obj.Manager, request.user)
         return obj.Manager == request.user
+
+
+class IsTechnician(BasePermission):
+    def has_permission(self, request, view):
+        if not hasattr(request.user, 'technician'):
+            raise PermissionDenied(_("Vous devez être un technicien pour accéder à cette ressource."))
+        if not request.user.technician.is_verified:
+            raise PermissionDenied(_("Votre profil technicien n'est pas encore vérifié."))
+        return True
+
+        

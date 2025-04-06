@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer
+from .models import User, OneTimePasscode,Technician
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -8,7 +8,7 @@ from .utils import  send_otp_email
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from .permissions import IsManager, IsUser
+from .permissions import IsManager, IsUser, IsTechnician
 from django.contrib.auth import logout
 from rest_framework.views import APIView
 from django.http import JsonResponse
@@ -18,6 +18,9 @@ from rest_framework.response import Response
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 
 
    
@@ -91,7 +94,25 @@ class UserDetailView(RetrieveAPIView):
     queryset = User.objects.all()  
     serializer_class = UserRegisterSerializer  
     permission_classes = [IsUser, IsManager]
+
+class TechnicianRegisterView(generics.CreateAPIView):
+    serializer_class = TechnicianSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Technician.objects.all()
     
+class TechnicianDetailView(generics.RetrieveAPIView):
+    queryset = Technician.objects.filter(is_verified=True)
+    serializer_class = TechnicianSerializer
+    permission_classes = [permissions.AllowAny]
+
+class TechnicianUpdateView(generics.UpdateAPIView):
+    serializer_class = TechnicianSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTechnician]
+    queryset = Technician.objects.all()  
+    def get_object(self):
+        return self.request.user.technician
 
 @ensure_csrf_cookie
 def get_csrf_token(request):
