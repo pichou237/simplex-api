@@ -20,10 +20,10 @@ class IsUser(permissions.BasePermission):
 
 class IsManager(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        if request.method in ['GET', 'HEAD', 'OPTION']:
+        if request.method in ['GET', 'HEAD', 'OPTIONS']:  
             return True
-        print(obj.Manager, request.user)
-        return obj.Manager == request.user
+        return obj.created_by == request.user 
+
 
 
 class IsTechnician(BasePermission):

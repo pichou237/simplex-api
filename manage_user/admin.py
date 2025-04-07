@@ -15,7 +15,7 @@ class TechnicienAdmin(admin.ModelAdmin):
     actions = ['valider_techniciens']
 
     @admin.action(description="Valider les techniciens sélectionnés")
-    def valider_techniciens(self, request, queryset):
+    def valider_techniciens(self, request, queryset): 
         queryset.update(is_verified=True)
 
 admin.site.register(Technician, TechnicienAdmin)
