@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-ix)hfon(omvnklm&sp!o-#y84hc_r*%-1#d#j(zqp!y9x(_*=e
 ENV = 'test'
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
 SECURE_HSTS_PRELOAD = False
