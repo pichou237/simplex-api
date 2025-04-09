@@ -1,12 +1,12 @@
 echo "Running migrations..."
 
-python manage.py makemigrations manage_user 
+python manage.py makemigrations
 
 python manage.py migrate
 
 python manage.py test
 
-python manage.py collectstatic --noinput
+# python manage.py collectstatic --noinput
 
 if [ $? -ne 0 ]; then
   echo " "
