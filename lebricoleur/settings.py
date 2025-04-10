@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'manage_user',
     'manage_services',
+    'drf_yasg',
 
 ]
 
@@ -138,6 +139,9 @@ else:
                 'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
+
+        STATIC_URL = '/static/'
+
     
 
 

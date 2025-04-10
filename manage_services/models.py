@@ -20,12 +20,4 @@ class ServiceRequest(models.Model):
     def __str__(self):
         return f"{self.title} - {self.client.first_name}"
     
-class ServiceReview(models.Model):
-    service_request = models.ForeignKey(ServiceRequest, on_delete=models.CASCADE, related_name="reviews")
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="written_reviews")
-    rating = models.PositiveIntegerField(verbose_name="Note", default=5)
-    comment = models.TextField(verbose_name="Commentaire")
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"Avis de {self.author.get_full_name} sur {self.service_request.title}"
