@@ -1,22 +1,4 @@
-# version: "3.8"
-
-# services:
-#   web:
-#     build:
-#       context: .
-#     ports:
-#       - "8000:8000"
-#     env_file:
-#       - .env
-#     environment:
-#       CLEAR_MIGRATIONS: "false"
-#       RUN_TESTS: "false"
-#       CREATE_SUPERUSER: "true"
-#     volumes:
-#       - .:/app
-
-
-version: '3.8'
+version: "3.8"
 
 services:
   web:
@@ -24,13 +6,13 @@ services:
     volumes:
       - .:/app
     ports: 
-      - 8091:8000
+      - 8080:8000
     env_file:
       - .env
     command: "sh script.sh"
     networks:
       - app_network2 
-      
+
 
   celery:
     build: .
@@ -57,56 +39,5 @@ services:
       - app_network2
 
 networks:
-  app_network:
+  app_network2:
     external: true
-
-
-# version: '3.3'  # Ensure this matches your Docker Compose version
-
-# services:
-#   web:
-#     build: .
-#     volumes:
-#       - .:/app
-#     ports: 
-#       - 8005:8000
-#     env_file:
-#       - .env
-#     command: "sh script.sh"
-#     depends_on:
-#       - redis
-#       - postgres
-
-#   redis:
-#     image: redis  # changed to official Redis image
-#     ports:
-#       - "6379:6379"
-#     cap_add:
-#       - SYS_RESOURCE
-#     restart: unless-stopped
-
-#   postgres:
-#     image: postgres:14.5
-#     environment:
-#       POSTGRES_USER: postgres
-#       POSTGRES_PASSWORD: 1234
-#       POSTGRES_DB: postgres
-#     ports:
-#       - "5432:5432"
-#     restart: unless-stopped
-#     volumes:
-#       - pgdata:/var/lib/postgresql/data
-
-#   pgadmin:
-#     image: dpage/pgadmin4
-#     depends_on:
-#       - postgres
-#     ports:
-#       - "5050:80"
-#     environment:
-#       PGADMIN_DEFAULT_EMAIL: admin@admin.com
-#       PGADMIN_DEFAULT_PASSWORD: root
-#     restart: unless-stopped
-
-# volumes:
-#   pgdata:
