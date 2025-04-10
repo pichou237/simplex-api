@@ -30,6 +30,7 @@ services:
     command: "sh script.sh"
     networks:
       - app_network2 
+      
 
   celery:
     build: .

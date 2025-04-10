@@ -4,7 +4,9 @@ from django.utils.translation import gettext_lazy as _
 from .manager import UserManager
 from rest_framework_simplejwt.tokens import RefreshToken
 from.enums import TechnicianProfession
-# from .enums import TechnicianProfession,TechnicianStatus
+from django.utils import timezone
+from datetime import timedelta
+from .enums import TechnicianProfession
 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
@@ -45,12 +47,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         }
 
 
+def default_expiry():
+    return timezone.now() + timedelta(minutes=10)
+
 class OneTimePasscode(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    code = models.CharField(max_length=8, unique=True)
+    code = models.CharField(max_length=6)
+    expires_at = models.DateTimeField(default=default_expiry)
 
-    def __str__(self) -> str:
-        return f"{self.user.first_name}-passcode"
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
 
 
 class Technician(models.Model):
