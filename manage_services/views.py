@@ -1,8 +1,8 @@
 # manage_services/views.py
 
 from rest_framework import generics, permissions
-from .models import ServicePost, ServiceRequest, ServiceReview
-from .serializers import ServicePostSerializer, ServiceRequestSerializer, ServiceReviewSerializer
+from .models import ServicePost, ServiceRequest
+from .serializers import ServicePostSerializer, ServiceRequestSerializer
 
 
 # --- SERVICE POST ---
@@ -39,24 +39,3 @@ class ServiceRequestDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 
-# --- SERVICE REVIEW ---
-
-class ServiceReviewListCreateView(generics.ListCreateAPIView):
-    queryset = ServiceReview.objects.all()
-    serializer_class = ServiceReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_queryset(self):
-        return ServiceReview.objects.filter(service_request_id=self.kwargs['service_request_id'])
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-
-class ServiceReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = ServiceReview.objects.all()
-    serializer_class = ServiceReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def perform_update(self, serializer):
-        serializer.save(author=self.request.user)
