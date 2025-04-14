@@ -114,9 +114,9 @@ class TechnicianUpdateView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user.technician
 
-@ensure_csrf_cookie
-def get_csrf_token(request):
-    return JsonResponse({'csrfToken': request.META.get('CSRF_COOKIE', '')})
+# @ensure_csrf_cookie
+# def get_csrf_token(request):
+#     return JsonResponse({'csrfToken': request.META.get('CSRF_COOKIE', '')})
 
     
 
