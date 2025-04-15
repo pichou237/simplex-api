@@ -1,4 +1,4 @@
-from .models import User, OneTimePasscode,Technician
+from .models import User, OneTimePasscode,Technician,MetaUser
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -83,3 +83,11 @@ class TechnicianSerializer(serializers.ModelSerializer):
         if hasattr(user, 'technician'):
             raise serializers.ValidationError("Vous êtes déjà enregistré comme technicien.")
         return Technician.objects.create(user=user, **validated_data)
+
+class MetaUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetaUser
+        fields = ['CNI', 'photo', 'is_verified']
+        read_only_fields = ['is_verified']
+
+    
