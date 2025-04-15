@@ -4,7 +4,7 @@ class TechnicianProfession(models.TextChoices):
     PLUMBER = "plumber", "Plumber"
     ELECTRICIAN = "electrician", "Electrician"
     CARPENTER = "carpenter", "Carpenter"
-    MECHANIC = "mechanic", "Mechanic"
+    MECHANICIAN = "mechanician", "Mechanician"
     PAINTER = "painter", "Painter"
     GARDENER = "gardener", "Gardener"
     CLEANER = "cleaner", "Cleaner"
