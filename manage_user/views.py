@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode,Technician
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer
+from .models import User, OneTimePasscode,Technician, MetaUser
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -114,12 +114,19 @@ class TechnicianUpdateView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user.technician
 
-# @ensure_csrf_cookie
-# def get_csrf_token(request):
-#     return JsonResponse({'csrfToken': request.META.get('CSRF_COOKIE', '')})
-
-    
 
 
+class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = MetaUserSerializer
+    permission_classes = [IsAuthenticated, IsTechnician]
 
+    def get_object(self):
+        technician = self.request.user.technician
+        try:
+            return technician.metauser
+        except MetaUser.DoesNotExist:
+            metauser = MetaUser.objects.create(technician=technician)
+            return metauser
 
+    def perform_create(self, serializer):
+        serializer.save(technician=self.request.user.technician)

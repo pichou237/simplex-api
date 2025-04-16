@@ -89,5 +89,3 @@ class MetaUserSerializer(serializers.ModelSerializer):
         model = MetaUser
         fields = ['CNI', 'photo', 'is_verified']
         read_only_fields = ['is_verified']
-
-    
