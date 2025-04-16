@@ -70,9 +70,11 @@ class Technician(models.Model):
     
 class Client(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
-    
 
-   
-
-
-
+class MetaUser(models.Model):
+    technician = models.OneToOneField(Technician, on_delete=models.CASCADE)
+    CNI = models.ImageField(upload_to='cni/', verbose_name="CNI")
+    photo = models.ImageField(upload_to='photos/', verbose_name="Photo")
+    is_verified = models.BooleanField(default=False)
+    def __str__(self):
+        return f"Infos de {self.technician.user.first_name} {self.technician.user.last_name}"

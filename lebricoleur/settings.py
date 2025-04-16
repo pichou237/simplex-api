@@ -61,6 +61,11 @@ REST_FRAMEWORK = {
     ),
 }
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://sandbox.devxs.xyz',
+]
+
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -140,7 +145,13 @@ else:
             }
         }
 
-        STATIC_URL = '/static/'
+
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  
+STATICFILES_DIRS = [ os.path.join(BASE_DIR, 'static')  
+]
+
 
     
 
