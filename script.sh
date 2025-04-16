@@ -1,6 +1,6 @@
 echo "Running migrations..."
 
-python manage.py makemigrations
+python manage.py makemigrations manage_user manage_services 
 
 python manage.py migrate
 
