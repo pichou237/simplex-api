@@ -30,8 +30,8 @@ class IsTechnician(BasePermission):
     def has_permission(self, request, view):
         if not hasattr(request.user, 'technician'):
             raise PermissionDenied(_("Vous devez être un technicien pour accéder à cette ressource."))
-        if not request.user.technician.is_verified:
-            raise PermissionDenied(_("Votre profil technicien n'est pas encore vérifié."))
+        if not request.user.technician:
+            raise PermissionDenied(_("veillez envoyer votre photo et CNI pour devenir technicien confirmé."))
         return True
 
         
