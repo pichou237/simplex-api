@@ -21,7 +21,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
-
+from.security import LoginThrottle
 
    
 
@@ -82,6 +82,7 @@ class VerifyEmailView(GenericAPIView):
 class LoginUserView(GenericAPIView):
     serializer_class = UserLoginSerializer
     permission_classes = [AllowAny] 
+    throttle_classes = [LoginThrottle]
     def post(self, request):
        
 
