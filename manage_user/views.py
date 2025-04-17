@@ -18,6 +18,8 @@ from rest_framework.response import Response
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_protect
+from django.utils.decorators import method_decorator
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -95,13 +97,16 @@ class UserDetailView(RetrieveAPIView):
     serializer_class = UserRegisterSerializer  
     permission_classes = [IsUser, IsManager]
 
+@method_decorator(csrf_protect, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+
 class TechnicianRegisterView(generics.CreateAPIView):
     serializer_class = TechnicianSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return Technician.objects.all()
-    
+
 class TechnicianDetailView(generics.RetrieveAPIView):
     queryset = Technician.objects.filter(is_verified=True)
     serializer_class = TechnicianSerializer
@@ -130,3 +135,5 @@ class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_create(self, serializer):
         serializer.save(technician=self.request.user.technician)
+
+   
