@@ -73,19 +73,19 @@ REST_FRAMEWORK = {
 }
 
 
-CACHES = {
-            "default": {
-                "BACKEND": "django_redis.cache.RedisCache",
-                "LOCATION": config("REDIS_HOST"),
-                "OPTIONS": {
-                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                    "PASSWORD": config("REDIS_PASSWORD"),
-                    "SOCKET_CONNECT_TIMEOUT": 10,
-                    "SOCKET_TIMEOUT": 5,
-                    "ssl": True
-                }
-            }
-        }
+# CACHES = {
+#             "default": {
+#                 "BACKEND": "django_redis.cache.RedisCache",
+#                 "LOCATION": config("REDIS_HOST"),
+#                 "OPTIONS": {
+#                     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#                     "PASSWORD": config("REDIS_PASSWORD"),
+#                     "SOCKET_CONNECT_TIMEOUT": 10,
+#                     "SOCKET_TIMEOUT": 5,
+#                     "ssl": True
+#                 }
+#             }
+#         }
 
 
 SIMPLE_JWT = {
