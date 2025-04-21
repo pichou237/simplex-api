@@ -28,3 +28,4 @@ wcwidth==0.2.13
 drf_yasg
 pytest
 pytest-django
+django-redis
