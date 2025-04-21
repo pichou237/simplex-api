@@ -24,7 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/manage_users/', include('manage_user.urls')),
     path('api/manage_services/', include('manage_services.urls')),
-    path('api-auth/', include('rest_framework.urls', namespace='restframework')),
+   #  path('api-auth/', include('rest_framework.urls', namespace='restframework')),
     
     re_path('swagger.yaml/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
