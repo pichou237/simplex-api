@@ -1,5 +1,5 @@
 from .models import User, OneTimePasscode,Technician, MetaUser
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -137,4 +137,20 @@ class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
     def perform_create(self, serializer):
         serializer.save(technician=self.request.user.technician)
 
-   
+class SendOTPView(APIView):
+    permission_classes = [IsAuthenticated]  
+    serializer_class = ResendOTPSerializer
+    def post(self, request):
+        user = request.user  
+        existing_otp = OneTimePasscode.objects.filter(user=user).first()
+
+        if existing_otp:
+            if existing_otp.is_expired():
+                send_otp_email.apply_async(args=[{'id': user.id}])
+                return Response({"message": "Votre OTP a expiré. Un nouveau code a été envoyé."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Un OTP valide est déjà en place."}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            send_otp_email.apply_async(args=[{'id': user.id}])
+            return Response({"message": "Un OTP a été envoyé."}, status=status.HTTP_200_OK)

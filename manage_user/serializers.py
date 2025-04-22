@@ -10,6 +10,9 @@ from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 
 import logging
 
@@ -89,3 +92,26 @@ class MetaUserSerializer(serializers.ModelSerializer):
         model = MetaUser
         fields = ['CNI', 'photo', 'is_verified']
         read_only_fields = ['is_verified']
+
+# serializers.py
+
+
+User = get_user_model()
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        try:
+            self.user = User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(_("Aucun utilisateur n'est associé à cet email."))
+        return value
+
+    def save(self, **kwargs):
+        try:
+            send_otp_email.delay({'id': self.user.id})
+        except Exception as e:
+            logger.error(f"Erreur lors de l'envoi de l'OTP : {str(e)}")
+            raise serializers.ValidationError(_("Une erreur est survenue lors de l'envoi de l'OTP. Veuillez réessayer."))
+        return {"message": _("Un nouveau code OTP a été envoyé à votre adresse email.")}
