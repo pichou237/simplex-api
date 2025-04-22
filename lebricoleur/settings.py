@@ -28,7 +28,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 
 ENV = 'test'
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 CSRF_COOKIE_SECURE = False
@@ -58,19 +58,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
-
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/minute',   # visiteurs non connectés (agressif)
         'user': '100/hour',    # utilisateurs connectés
     }
 }
 
-CSRF_COOKIE_SECURE = False 
 
 # CACHES = {
 #             "default": {
