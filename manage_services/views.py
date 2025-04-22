@@ -1,11 +1,8 @@
-# manage_services/views.py
 
 from rest_framework import generics, permissions
 from .models import ServicePost, ServiceRequest
 from .serializers import ServicePostSerializer, ServiceRequestSerializer
 
-
-# --- SERVICE POST ---
 
 class ServicePostListCreateView(generics.ListCreateAPIView):
     queryset = ServicePost.objects.all()
@@ -21,8 +18,6 @@ class ServicePostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ServicePostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-
-# --- SERVICE REQUEST ---
 
 class ServiceRequestListCreateView(generics.ListCreateAPIView):
     queryset = ServiceRequest.objects.all()

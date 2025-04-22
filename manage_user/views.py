@@ -101,7 +101,7 @@ class UserDetailView(RetrieveAPIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class TechnicianRegisterView(generics.CreateAPIView):
     serializer_class = TechnicianSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Technician.objects.all()
