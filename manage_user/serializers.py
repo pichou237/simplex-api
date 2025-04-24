@@ -93,7 +93,6 @@ class MetaUserSerializer(serializers.ModelSerializer):
         fields = ['CNI', 'photo', 'is_verified']
         read_only_fields = ['is_verified']
 
-# serializers.py
 
 
 User = get_user_model()
