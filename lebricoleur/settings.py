@@ -59,16 +59,19 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
+
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/minute',   # visiteurs non connectés (agressif)
         'user': '100/hour',    # utilisateurs connectés
     }
 }
 
+CSRF_COOKIE_SECURE = False 
 
 # CACHES = {
 #             "default": {

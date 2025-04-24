@@ -1,7 +1,6 @@
 from django.urls import path
 from .views import UserRegisterView, VerifyEmailView, LoginUserView, UserDetailView, TechnicianDetailView, TechnicianUpdateView, TechnicianRegisterView,MetaUserView,SendOTPView
 from rest_framework_simplejwt.views import TokenRefreshView
-from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view(), name='register'),
@@ -15,8 +14,7 @@ urlpatterns = [
     path('Meta_user/meta/<int:pk>/', MetaUserView.as_view(), name='meta-user-detail'),
     path('Meta_user/meta/', MetaUserView.as_view(), name='meta-user-list-create'),
     path('create_charge/', csrf_exempt(TechnicianRegisterView.as_view()), name='create-charge'),
-    path('send_otp/', SendOTPView.as_view(), name='send-otp'),]
-    
+    path('send_otp/', SendOTPView.as_view(), name='send-otp'),]   
 
 
    

@@ -17,8 +17,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -98,12 +97,11 @@ class UserDetailView(RetrieveAPIView):
     serializer_class = UserRegisterSerializer  
     permission_classes = [IsUser, IsManager]
 
-@method_decorator(csrf_protect, name='dispatch')
-@method_decorator(ensure_csrf_cookie, name='dispatch')
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TechnicianRegisterView(generics.CreateAPIView):
     serializer_class = TechnicianSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Technician.objects.all()
