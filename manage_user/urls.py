@@ -13,7 +13,7 @@ urlpatterns = [
     path('technicien/update/', TechnicianUpdateView.as_view(), name='technicien-update'),
     path('Meta_user/meta/<int:pk>/', MetaUserView.as_view(), name='meta-user-detail'),
     path('Meta_user/meta/', MetaUserView.as_view(), name='meta-user-list-create'),
-    path('create_charge/', csrf_exempt(TechnicianRegisterView.as_view()), name='create-charge'),
+    path('create_charge/', TechnicianRegisterView.as_view(), name='create-charge'),
     path('send_otp/', SendOTPView.as_view(), name='send-otp'),]   
 
 
