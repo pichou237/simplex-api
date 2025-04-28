@@ -16,7 +16,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone_number = models.CharField(max_length=20, verbose_name=_("phone number"), null=False, blank=True)  
     city = models.CharField(max_length=255, verbose_name=_("city"), null=True, blank=True)
     address = models.TextField(verbose_name=_("address"), null=True, blank=True)
-    district = models.CharField(verbose_name="quartier",max_length=255)
+    district = models.CharField(verbose_name="quartier",max_length=255, blank=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
