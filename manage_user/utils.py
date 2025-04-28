@@ -104,9 +104,9 @@ def generate_otp(length=6):
     return ''.join(random.choices(string.digits, k=length))  # Utilisation de random.choices pour générer un OTP
 
 @app.task(bind=True, max_retries=3, default_retry_delay=60)
-def send_otp_email(self, user_data):
+def send_otp_email(self, user):
     try:
-        user_id = user_data.get('id')
+        user_id = user.id
         user = User.objects.get(id=user_id)  # Récupérez l'utilisateur à partir de l'ID
         logger.info(f"Utilisateur trouvé : {user.email}")
 
