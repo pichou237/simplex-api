@@ -9,7 +9,6 @@ from datetime import timedelta
 from .enums import TechnicianProfession
 
 class User(AbstractBaseUser, PermissionsMixin):
-    id = models.AutoField(primary_key=True)
     email = models.EmailField(verbose_name=_('email address'), max_length=255, unique=True)
     first_name = models.CharField(max_length=255, verbose_name=_("first name"))
     last_name = models.CharField(max_length=255, verbose_name=_("last name"), null=True, blank=True)
