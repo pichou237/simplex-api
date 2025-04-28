@@ -118,11 +118,16 @@ class TechnicianUpdateView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user.technician
 
+class TechnicianListView(generics.ListAPIView):
+    queryset = Technician.objects.filter(is_verified=True)
+    serializer_class = TechnicianSerializer
+    permission_classes = [permissions.AllowAny]
 
 
 class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MetaUserSerializer
     permission_classes = [IsAuthenticated, IsTechnician]
+    queryset = MetaUser.objects.all()
 
     def get_object(self):
         technician = self.request.user.technician
