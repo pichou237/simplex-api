@@ -29,3 +29,4 @@ drf_yasg
 pytest
 pytest-django
 django-redis
+psycopg2-binary

@@ -172,4 +172,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
->>>>>>> 460d56e (Initial commit)
+staticfiles/
