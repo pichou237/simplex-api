@@ -76,9 +76,10 @@ class UserLoginSerializer(serializers.ModelSerializer):
         }
 
 class TechnicianSerializer(serializers.ModelSerializer):
+    user =  UserRegisterSerializer() 
     class Meta:
         model = Technician
-        fields = ['profession', 'description', 'is_verified']
+        fields = ['profession', 'description', 'is_verified', 'user']
         read_only_fields = ['is_verified']
 
     def create(self, validated_data):
