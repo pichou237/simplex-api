@@ -119,7 +119,7 @@ class TechnicianUpdateView(generics.UpdateAPIView):
         return self.request.user.technician
 
 class TechnicianListView(generics.ListAPIView):
-    queryset = Technician.objects.filter(is_verified=True)
+    queryset = Technician.objects.filter(is_verified=True).select_related('user')
     serializer_class = TechnicianSerializer
     permission_classes = [permissions.AllowAny]
 
