@@ -151,3 +151,13 @@ def send_otp_email(self, user):
     except Exception as e:
         logger.error(f"Erreur lors de l'envoi de l'OTP : {str(e)}")
         raise self.retry(exc=e)  # Réessayer en cas d'échec temporaire
+@app.task
+def send_normal_email(data):
+    email=EmailMessage(
+        subject=data['email_subject'],
+        body=data['email_body'],
+        from_email=settings.EMAIL_HOST_USER,
+        to=[data['to_email']]
+    )
+    email.send()
+

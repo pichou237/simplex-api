@@ -1,11 +1,11 @@
-from .models import User, OneTimePasscode,Technician,MetaUser
+from .models import User, OneTimePasscode,Technician,MetaUser,TechnicianImage
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import smart_bytes, force_str
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from .utils import send_otp_email
+from .utils import send_otp_email,send_normal_email
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -76,17 +76,26 @@ class UserLoginSerializer(serializers.ModelSerializer):
         }
 
 class TechnicianSerializer(serializers.ModelSerializer):
-    user =  UserRegisterSerializer() 
     class Meta:
         model = Technician
-        fields = ['profession', 'description', 'is_verified', 'user']
-        read_only_fields = ['is_verified']
+        fields = ['profession', 'description', 'is_verified', 'user', 'banner']
+        read_only_fields = ['is_verified','user']
 
     def create(self, validated_data):
         user = self.context['request'].user
+
         if hasattr(user, 'technician'):
             raise serializers.ValidationError("Vous êtes déjà enregistré comme technicien.")
+
         return Technician.objects.create(user=user, **validated_data)
+    
+    def list(self,validated_data):
+        user_id = validated_data.get('user')
+        try:
+            user = User.objects.get(id=user_id)
+            return user
+        except Technician.DoesNotExist:
+            raise serializers.ValidationError("Vous n'êtes pas enregistré comme technicien.")
 
 class MetaUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -115,3 +124,65 @@ class ResendOTPSerializer(serializers.Serializer):
             logger.error(f"Erreur lors de l'envoi de l'OTP : {str(e)}")
             raise serializers.ValidationError(_("Une erreur est survenue lors de l'envoi de l'OTP. Veuillez réessayer."))
         return {"message": _("Un nouveau code OTP a été envoyé à votre adresse email.")}
+    
+
+class TechnicianImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TechnicianImage
+        fields = ['image', 'create_at', 'technician']
+        read_only_fields = ['create_at']
+
+    
+
+class PasswordResetRequestSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(max_length=255)
+
+    class Meta:
+        model = User
+        fields = ['email']
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user=user)
+            request = self.context.get('request')
+            abslink = f"http://127.0.0.1:8000/api/manage_users/password-reset/{uidb64}/{token}"
+            email_body = f"Hi user the link below to reset your password \n {abslink}"
+            data = {
+                'email_body':email_body,
+                'email_subject':'Reset your password',
+                'to_email':user.email
+            }
+            send_normal_email(data)
+
+        return super().validate(attrs)
+    
+class SetNewPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=68, min_length=6, write_only=True)
+    confirm_password = serializers.CharField(max_length=68, min_length=6, write_only=True)
+    uidb64 = serializers.CharField(write_only=True)
+    token = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['password', 'confirm_password', 'uidb64', 'token']
+
+    def validate(self, attrs):
+        token = attrs.get('token')
+        uidb64 = attrs.get('uidb64')
+        password = attrs.get('password')
+        confirm_password = attrs.get('confirm_password')
+
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(id=user_id)
+
+        if not PasswordResetTokenGenerator().check_token(user, token):
+            raise AuthenticationFailed("reset link is invalid or has expired", 401)
+        if password != confirm_password:
+            raise AuthenticationFailed("passwords do not match")
+        user.set_password(password)
+        user.save()
+        return user

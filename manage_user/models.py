@@ -63,9 +63,18 @@ class Technician(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
     profession = models.CharField(choices=TechnicianProfession.choices,max_length=100)
     description = models.TextField(max_length=5000,verbose_name=_("decrivez votre job ici"))
+    banner = models.CharField(max_length=500, verbose_name=_("banner"), null=True, blank=True)
     is_verified = models.BooleanField(default=False)
     def __str__(self) -> str:
         return f"{self.user.first_name}-{self.profession}"
+    
+class TechnicianImage(models.Model):
+    technician = models.OneToOneField(Technician, on_delete=models.CASCADE)
+    image = models.URLField(max_length=500, verbose_name=_("url image"), null=True, blank=True)
+    create_at = models.DateField(auto_now=True)
+    def __str__(self) -> str:
+        return f"Image de {self.technician.user.first_name} {self.technician.user.last_name}"
+
     
 class Client(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
