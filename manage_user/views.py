@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode,Technician, MetaUser,TechnicianImage
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,TechnicianImageSerializer, PasswordResetRequestSerializer, SetNewPasswordSerializer
+from .models import User, OneTimePasscode,Technician, MetaUser
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer, PasswordResetRequestSerializer, SetNewPasswordSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -8,7 +8,7 @@ from .utils import  send_otp_email
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from .permissions import IsManager, IsUser, IsTechnician
+from .permissions import IsManager, IsUser, IsTechnician, IsOwnerOrSuperUser
 from django.contrib.auth import logout
 from rest_framework.views import APIView
 from django.http import JsonResponse
@@ -23,6 +23,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from.security import LoginThrottle
+from rest_framework import viewsets
 
    
 
@@ -99,29 +100,14 @@ class UserDetailView(RetrieveAPIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class TechnicianRegisterView(generics.CreateAPIView):
+class TechnicianViewSet(viewsets.ModelViewSet):
+    queryset = Technician.objects.all()
     serializer_class = TechnicianSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrSuperUser]
 
     def get_queryset(self):
-        return Technician.objects.all()
-
-class TechnicianDetailView(generics.RetrieveAPIView):
-    queryset = Technician.objects.filter(is_verified=True)
-    serializer_class = TechnicianSerializer
-    permission_classes = [permissions.AllowAny]
-
-class TechnicianUpdateView(generics.UpdateAPIView):
-    serializer_class = TechnicianSerializer
-    permission_classes = [permissions.IsAuthenticated, IsTechnician]
-    queryset = Technician.objects.all()  
-    def get_object(self):
-        return self.request.user.technician
-
-class TechnicianListView(generics.ListAPIView):
-    queryset = Technician.objects.filter(is_verified=True)
-    serializer_class = TechnicianSerializer
-    permission_classes = [permissions.AllowAny]
+        # Vous pouvez ajouter des filtres ici si nécessaire
+        return super().get_queryset().select_related('user')
 
 
 class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
@@ -157,11 +143,6 @@ class SendOTPView(APIView):
         else:
             send_otp_email.apply_async(args=[{'id': user.id}])
             return Response({"message": "Un OTP a été envoyé."}, status=status.HTTP_200_OK)
-        
-class TechnicianImageListCreateView(generics.ListCreateAPIView):
-    queryset = TechnicianImage.objects.all()
-    serializer_class = TechnicianImageSerializer
-    permission_classes = [IsAuthenticated,IsTechnician]
 
 
 class PasswordResetRequestView(GenericAPIView):
