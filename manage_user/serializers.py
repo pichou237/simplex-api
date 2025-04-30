@@ -1,4 +1,4 @@
-from .models import User, OneTimePasscode,Technician,MetaUser,TechnicianImage
+from .models import User, OneTimePasscode, Technician, MetaUser
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -76,26 +76,23 @@ class UserLoginSerializer(serializers.ModelSerializer):
         }
 
 class TechnicianSerializer(serializers.ModelSerializer):
+    user = UserRegisterSerializer(read_only=True)
+    profession = serializers.CharField()
+    description = serializers.CharField()
+    banner = serializers.ImageField(required=False)
+    # images = serializers.ListField(child=serializers.ImageField(), required=False)
+    
     class Meta:
         model = Technician
-        fields = ['profession', 'description', 'is_verified', 'user', 'banner']
-        read_only_fields = ['is_verified','user']
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-
-        if hasattr(user, 'technician'):
-            raise serializers.ValidationError("Vous êtes déjà enregistré comme technicien.")
-
-        return Technician.objects.create(user=user, **validated_data)
+        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner']
+        read_only_fields = ['is_verified']
     
-    def list(self,validated_data):
-        user_id = validated_data.get('user')
-        try:
-            user = User.objects.get(id=user_id)
-            return user
-        except Technician.DoesNotExist:
-            raise serializers.ValidationError("Vous n'êtes pas enregistré comme technicien.")
+    def create(self, validated_data):
+        # Récupère l'utilisateur de la requête
+        user = self.context['request'].user
+        # Crée le technicien avec l'utilisateur connecté
+        technician = Technician.objects.create(user=user, **validated_data)
+        return technician
 
 class MetaUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -124,14 +121,6 @@ class ResendOTPSerializer(serializers.Serializer):
             logger.error(f"Erreur lors de l'envoi de l'OTP : {str(e)}")
             raise serializers.ValidationError(_("Une erreur est survenue lors de l'envoi de l'OTP. Veuillez réessayer."))
         return {"message": _("Un nouveau code OTP a été envoyé à votre adresse email.")}
-    
-
-class TechnicianImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TechnicianImage
-        fields = ['image', 'create_at', 'technician']
-        read_only_fields = ['create_at']
-
     
 
 class PasswordResetRequestSerializer(serializers.ModelSerializer):
