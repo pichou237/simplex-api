@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import UserRegisterView, VerifyEmailView, LoginUserView, UserDetailView, TechnicianDetailView, TechnicianViewSet,MetaUserView,SendOTPView, SetNewPasswordView,PasswordResetConfirm,PasswordResetRequestView, UpdateProfileView
+from .views import UserRegisterView, VerifyEmailView, LoginUserView, UserDetailView, TechnicianViewSet,MetaUserView,SendOTPView, SetNewPasswordView,PasswordResetConfirm,PasswordResetRequestView, UpdateProfileView
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.routers import DefaultRouter
 

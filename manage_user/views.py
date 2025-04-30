@@ -8,7 +8,7 @@ from .utils import  send_otp_email
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from .permissions import IsManager, IsUser, IsTechnician
+from .permissions import IsManager, IsUser, IsTechnician, IsOwnerOrSuperUser
 from django.contrib.auth import logout
 from rest_framework.views import APIView
 from django.http import JsonResponse
@@ -103,16 +103,11 @@ class UserDetailView(RetrieveAPIView):
 class TechnicianViewSet(viewsets.ModelViewSet):
     queryset = Technician.objects.all()
     serializer_class = TechnicianSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrSuperUser]
 
     def get_queryset(self):
         # Vous pouvez ajouter des filtres ici si nécessaire
         return super().get_queryset().select_related('user')
-
-class TechnicianDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Technician.objects.filter(is_verified=True)
-    serializer_class = TechnicianSerializer
-    permission_classes = [permissions.AllowAny]
 
 
 class MetaUserView(generics.RetrieveUpdateDestroyAPIView):

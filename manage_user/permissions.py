@@ -34,4 +34,16 @@ class IsTechnician(BasePermission):
             raise PermissionDenied(_("veillez envoyer votre photo et CNI pour devenir technicien confirmé."))
         return True
 
-        
+class IsOwnerOrSuperUser(permissions.BasePermission):
+    """
+    Permission personnalisée pour autoriser seulement le propriétaire ou un superutilisateur
+    à modifier ou supprimer une instance.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Les méthodes SAFE (GET, HEAD, OPTIONS) sont toujours autorisées
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Seul le propriétaire (user associé) ou un superutilisateur peut modifier/supprimer
+        return obj.user == request.user or request.user.is_superuser
