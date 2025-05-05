@@ -108,7 +108,7 @@ class TechnicianViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrSuperUser]
     filterset_class = TechnicianFilter
     filter_backends = [DjangoFilterBackend]
-    seach_fields = ['profession', 'user__city', 'user__district', 'user__address']
+    seach_fields = ['profession', 'user__city', 'user__address']
     ordering_fields = ['profession']
 
 

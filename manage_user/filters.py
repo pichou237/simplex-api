@@ -8,5 +8,5 @@ class TechnicianFilter(django_filters.FilterSet):
         fields = {
             'profession': ['exact', 'icontains'],
             'user__city': ['exact', 'icontains'],
-            'user__district': ['exact', 'icontains'],
+            'user__address': ['exact', 'icontains'],
         }
