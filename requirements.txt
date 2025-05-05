@@ -30,3 +30,4 @@ pytest
 pytest-django
 django-redis
 psycopg2-binary
+django-filter

@@ -55,6 +55,12 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+    'django_filters.rest_framework.DjangoFilterBackend',
+    'rest_framework.filters.SearchFilter',
+    'rest_framework.filters.OrderingFilter',
+],
+
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -67,6 +73,7 @@ REST_FRAMEWORK = {
         'anon': '10/minute',   # visiteurs non connectés (agressif)
         'user': '100/hour',    # utilisateurs connectés
     }
+    
 }
 
 
@@ -105,6 +112,8 @@ INSTALLED_APPS = [
     'manage_user',
     'manage_services',
     'drf_yasg',
+    'django_filters',
+
 
 ]
 
