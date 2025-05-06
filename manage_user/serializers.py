@@ -74,33 +74,67 @@ class UserLoginSerializer(serializers.ModelSerializer):
             'access_token': str(tokens.get('access')),
             'refresh_token': str(tokens.get('refresh')),
         }
-
+    
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ['id', 'images']
+        
 class TechnicianSerializer(serializers.ModelSerializer):
     user = UserRegisterSerializer(read_only=True)
     profession = serializers.CharField()
     description = serializers.CharField()
     banner = serializers.ImageField(required=False)
-    # images = serializers.ListField(child=serializers.ImageField(), required=False)
+    images = ImageSerializer(many=True, required=False)
     
     class Meta:
         model = Technician
-        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner']
+        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner', 'images']
         read_only_fields = ['is_verified']
-    
+
     def create(self, validated_data):
-        # Récupère l'utilisateur de la requête
+        images_data = validated_data.pop('images', [])
         user = self.context['request'].user
-        # Crée le technicien avec l'utilisateur connecté
         technician = Technician.objects.create(user=user, **validated_data)
+
+        for image_data in images_data:
+            Image.objects.create(technician=technician, **image_data)
+
         return technician
+
+    def update(self, instance, validated_data):
+        images_data = validated_data.pop('images', [])
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        for image_data in images_data:
+            Image.objects.create(technician=instance, **image_data)
+
+        return instance
     
-class ImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Image
-        fields = ['id', 'images', 'technician']
-        extra_kwargs = {
-            'technician': {'read_only': True}
-        }
+    # def create(self, validated_data):
+    #     # Récupère l'utilisateur de la requête
+    #     user = self.context['request'].user
+    #     # Crée le technicien avec l'utilisateur connecté
+    #     technician = Technician.objects.create(user=user, **validated_data)
+    #     return technician
+    
+    # def update(self, instance, validated_data):
+    #     images = validated_data.pop('images', [])
+
+    #     for attr, value in validated_data.items():
+    #         setattr(instance, attr, value)
+    #     instance.save()
+
+    #     # Ajout des images (sans supprimer les anciennes)
+    #     for image in images:
+    #         Image.objects.create(technician=instance, images=image)
+
+    #     return instance
+    
+
 
 class MetaUserSerializer(serializers.ModelSerializer):
     class Meta:

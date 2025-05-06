@@ -20,7 +20,6 @@ urlpatterns = [
     path('password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirm.as_view(), name='password-reset-confirm'),
     path('set-new-password/', SetNewPasswordView.as_view(), name='set-new-password'),
     path('update-profile/<int:pk>/', UpdateProfileView.as_view(), name='update-profile'),
-    # path('technicien/<int:pk>/upload-images/', TechnicianImageUploadView.as_view(), name='upload-technician-images'),
 ]
 
 
