@@ -26,6 +26,8 @@ from.security import LoginThrottle
 from rest_framework import viewsets
 from.filters import TechnicianFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
    
 
@@ -116,6 +118,32 @@ class TechnicianViewSet(viewsets.ModelViewSet):
         # Vous pouvez ajouter des filtres ici si nécessaire
         return super().get_queryset().select_related('user')
 
+# class TechnicianImageUploadView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     parser_classes = [MultiPartParser, FormParser]
+
+
+#     def post(self, request, pk):
+#         try:
+#             technician = Technician.objects.get(pk=pk)
+#         except Technician.DoesNotExist:
+#             return Response({'detail': 'Technicien introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+#         # Vérifie que l'utilisateur connecté est bien le technicien
+#         if request.user != technician.user:
+#             return Response({'detail': 'Non autorisé.'}, status=status.HTTP_403_FORBIDDEN)
+
+#         files = request.FILES.getlist('images')
+#         if not files:
+#             return Response({'detail': 'Aucune image trouvée.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         images = []
+#         for file in files:
+#             image = Image.objects.create(technician=technician, images=file)
+#             images.append(image)
+
+#         serializer = TechnicianImageSerializer(images, many=True)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MetaUserSerializer
@@ -207,4 +235,4 @@ class UserDetailView(RetrieveAPIView):
     queryset = User.objects.all()  
     serializer_class = UserRegisterSerializer  
     permission_classes = [IsUser]
-    
+

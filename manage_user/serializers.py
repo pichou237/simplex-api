@@ -1,4 +1,4 @@
-from .models import User, OneTimePasscode, Technician, MetaUser
+from .models import User, OneTimePasscode, Technician, MetaUser,Image
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -93,6 +93,14 @@ class TechnicianSerializer(serializers.ModelSerializer):
         # Crée le technicien avec l'utilisateur connecté
         technician = Technician.objects.create(user=user, **validated_data)
         return technician
+    
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ['id', 'images', 'technician']
+        extra_kwargs = {
+            'technician': {'read_only': True}
+        }
 
 class MetaUserSerializer(serializers.ModelSerializer):
     class Meta:

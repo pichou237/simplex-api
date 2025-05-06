@@ -64,11 +64,17 @@ class Technician(models.Model):
     profession = models.CharField(choices=TechnicianProfession.choices,max_length=100)
     description = models.TextField(max_length=5000,verbose_name=_("decrivez votre job ici"))
     banner = models.ImageField(upload_to='technician_banner/', verbose_name=_("banner"), null=True, blank=True)
-    images = models.ImageField(upload_to='technician_images/', verbose_name=_("images"), null=True, blank=True)
     is_verified = models.BooleanField(default=False)
    
     def __str__(self) -> str:
         return f"{self.user.first_name}-{self.profession}"
+    
+class Image(models.Model):
+    technician = models.ForeignKey(Technician, on_delete=models.CASCADE, related_name='images')
+    images = models.ImageField(upload_to='technician_images/', verbose_name=_("images"), null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.technician.user.first_name}-{self.image.url}"
     
 class Client(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
