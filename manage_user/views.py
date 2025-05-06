@@ -24,6 +24,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from.security import LoginThrottle
 from rest_framework import viewsets
+from.filters import TechnicianFilter
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
    
 
@@ -104,11 +108,15 @@ class TechnicianViewSet(viewsets.ModelViewSet):
     queryset = Technician.objects.all()
     serializer_class = TechnicianSerializer
     permission_classes = [IsOwnerOrSuperUser]
+    filterset_class = TechnicianFilter
+    filter_backends = [DjangoFilterBackend]
+    seach_fields = ['profession', 'user__city', 'user__address']
+    ordering_fields = ['profession']
+
 
     def get_queryset(self):
         # Vous pouvez ajouter des filtres ici si nécessaire
         return super().get_queryset().select_related('user')
-
 
 class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MetaUserSerializer
@@ -200,4 +208,4 @@ class UserDetailView(RetrieveAPIView):
     queryset = User.objects.all()  
     serializer_class = UserRegisterSerializer  
     permission_classes = [IsUser]
-    
+
