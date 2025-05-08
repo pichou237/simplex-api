@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode,Technician, MetaUser,Reviews
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer, ReviewSerializer
+from .models import User, OneTimePasscode,Technician, MetaUser,Reviews, Client
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer, ReviewSerializer, PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -8,7 +8,7 @@ from .utils import  send_otp_email
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from .permissions import IsManager, IsUser, IsTechnician, IsOwnerOrSuperUser
+from .permissions import IsManager, IsUser, IsTechnician, IsOwnerOrSuperUser, IsClientOrReadOnly
 from django.contrib.auth import logout
 from rest_framework.views import APIView
 from django.http import JsonResponse
@@ -28,6 +28,7 @@ from.filters import TechnicianFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import PermissionDenied
+from django.utils import timezone
 
 
 
@@ -136,23 +137,15 @@ class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
     def perform_create(self, serializer):
         serializer.save(technician=self.request.user.technician)
 
-class SendOTPView(APIView):
-    permission_classes = [IsAuthenticated]  
+class ResendOTPView(APIView):
+    permission_classes = [AllowAny]
     serializer_class = ResendOTPSerializer
     def post(self, request):
-        user = request.user  
-        existing_otp = OneTimePasscode.objects.filter(user=user).first()
-
-        if existing_otp:
-            if existing_otp.is_expired():
-                send_otp_email.apply_async(args=[{'id': user.id}])
-                return Response({"message": "Votre OTP a expiré. Un nouveau code a été envoyé."}, status=status.HTTP_200_OK)
-            else:
-                return Response({"message": "Un OTP valide est déjà en place."}, status=status.HTTP_400_BAD_REQUEST)
-
-        else:
-            send_otp_email.apply_async(args=[{'id': user.id}])
-            return Response({"message": "Un OTP a été envoyé."}, status=status.HTTP_200_OK)
+        serializer = ResendOTPSerializer(data=request.data)
+        if serializer.is_valid():
+            result = serializer.save()
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -170,9 +163,47 @@ class UserDetailView(RetrieveAPIView):
 
 
 
-class ReviewCreateListView(generics.ListCreateAPIView):
+class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Reviews.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsClientOrReadOnly]
 
-    
+
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = PasswordResetRequestSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class passwordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = passwordResetConfirmSerializer
+
+    def post(self, request):
+        serializer = passwordResetConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response({
+                "message": "OTP verified successfully.",
+                "uidb64": serializer.validated_data['uidb64'],
+                "token": serializer.validated_data['token']
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SetNewPasswordView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = SetNewPasswordSerializer
+
+    def post(self, request):
+        serializer = SetNewPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

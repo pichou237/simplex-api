@@ -1,10 +1,11 @@
 from django.urls import path, include
-from .views import UserRegisterView, VerifyEmailView, LoginUserView, UserDetailView, TechnicianViewSet,MetaUserView,SendOTPView, SetNewPasswordView,PasswordResetConfirm,PasswordResetRequestView, UpdateProfileView,ReviewCreateListView
+from .views import UserRegisterView, VerifyEmailView, LoginUserView, UserDetailView, TechnicianViewSet,MetaUserView,ResendOTPView, UpdateProfileView, ReviewViewSet, PasswordResetRequestView,passwordResetConfirmView,SetNewPasswordView
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'technicien', TechnicianViewSet, basename='technician')
+router.register(r'review', ReviewViewSet, basename='review')
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view(), name='register'),
@@ -15,13 +16,12 @@ urlpatterns = [
     path('', include(router.urls), name='technicien-create'),
     path('Meta_user/meta/<int:pk>/', MetaUserView.as_view(), name='meta-user-detail'),
     path('Meta_user/meta/', MetaUserView.as_view(), name='meta-user-list-create'),
-    path('send_otp/', SendOTPView.as_view(), name='send-otp'),
+    path('resend_otp/', ResendOTPView.as_view(), name='send-otp'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
-    path('password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirm.as_view(), name='password-reset-confirm'),
+    path('password-reset-confirm/', passwordResetConfirmView.as_view(), name='password-reset-confirm'),
     path('set-new-password/', SetNewPasswordView.as_view(), name='set-new-password'),
     path('update-profile/<int:pk>/', UpdateProfileView.as_view(), name='update-profile'),
-    path('review/', ReviewCreateListView.as_view(), name='review-list-create'),
-    
+      
 ]
 
    

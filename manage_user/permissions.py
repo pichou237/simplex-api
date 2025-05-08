@@ -47,3 +47,11 @@ class IsOwnerOrSuperUser(permissions.BasePermission):
 
         # Seul le propriétaire (user associé) ou un superutilisateur peut modifier/supprimer
         return obj.user == request.user or request.user.is_superuser
+    
+
+class IsClientOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.method in permissions.SAFE_METHODS or hasattr(request.user, 'client')
+
+    def has_object_permission(self, request, view, obj):
+        return request.method in permissions.SAFE_METHODS or obj.client.user == request.user
