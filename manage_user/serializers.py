@@ -13,6 +13,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+from .models import Reviews
+
 
 import logging
 
@@ -165,55 +167,39 @@ class ResendOTPSerializer(serializers.Serializer):
         return {"message": _("Un nouveau code OTP a été envoyé à votre adresse email.")}
     
 
-class PasswordResetRequestSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(max_length=255)
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
-    class Meta:
-        model = User
-        fields = ['email']
+    def validate_email(self, value):
+        try:
+            self.user = User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(_("Aucun utilisateur n'est associé à cet email."))
+        return value
 
-    def validate(self, attrs):
-        email = attrs.get('email')
-
-        if User.objects.filter(email=email).exists():
-            user = User.objects.get(email=email)
-            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
-            token = PasswordResetTokenGenerator().make_token(user=user)
-            request = self.context.get('request')
-            abslink = f"http://127.0.0.1:8000/api/manage_users/password-reset/{uidb64}/{token}"
-            email_body = f"Hi user the link below to reset your password \n {abslink}"
+    def save(self, **kwargs):
+        try:
+            uid = urlsafe_base64_encode(smart_bytes(self.user.pk))
+            token = PasswordResetTokenGenerator().make_token(self.user)
+            current_site = get_current_site(self.context['request']).domain
+            relative_link = reverse('password-reset-confirm', kwargs={'uidb64': uid, 'token': token})
+            absurl = f"http://{current_site}{relative_link}"
             data = {
-                'email_body':email_body,
-                'email_subject':'Reset your password',
-                'to_email':user.email
+                'email_body': f"Bonjour {self.user.first_name},\n\nVoici le lien pour réinitialiser votre mot de passe : {absurl}",
+                'to_email': self.user.email,
+                'email_subject': "Réinitialisation du mot de passe"
             }
-            send_normal_email(data)
+            send_normal_email.delay(data)
+        except Exception as e:
+            logger.error(f"Erreur lors de l'envoi de l'email de réinitialisation : {str(e)}")
+            raise serializers.ValidationError(_("Une erreur est survenue lors de l'envoi de l'email."))
+        return {"message": _("Un email a été envoyé pour réinitialiser votre mot de passe.")}
 
-        return super().validate(attrs)
-    
-class SetNewPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(max_length=68, min_length=6, write_only=True)
-    confirm_password = serializers.CharField(max_length=68, min_length=6, write_only=True)
-    uidb64 = serializers.CharField(write_only=True)
-    token = serializers.CharField(write_only=True)
-
+class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['password', 'confirm_password', 'uidb64', 'token']
+        model = Reviews
+        fields = ['id', 'client', 'technician', 'rating', 'comment', 'created_at']
+        read_only_fields = ['client', 'created_at']
 
-    def validate(self, attrs):
-        token = attrs.get('token')
-        uidb64 = attrs.get('uidb64')
-        password = attrs.get('password')
-        confirm_password = attrs.get('confirm_password')
-
-        user_id = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(id=user_id)
-
-        if not PasswordResetTokenGenerator().check_token(user, token):
-            raise AuthenticationFailed("reset link is invalid or has expired", 401)
-        if password != confirm_password:
-            raise AuthenticationFailed("passwords do not match")
-        user.set_password(password)
-        user.save()
-        return user
+    def validate(self, data):
+        return data
