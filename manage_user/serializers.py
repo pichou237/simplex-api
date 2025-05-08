@@ -1,11 +1,11 @@
-from .models import User, OneTimePasscode, Technician, MetaUser,Image
+from .models import User, OneTimePasscode, Technician, MetaUser,Image, Client
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import smart_bytes, force_str
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from .utils import send_otp_email,send_normal_email
+from .utils import send_otp_email,send_normal_email, generate_otp
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -13,6 +13,9 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+from .models import Reviews
+from django.utils import timezone
+
 
 import logging
 
@@ -144,7 +147,11 @@ class MetaUserSerializer(serializers.ModelSerializer):
 
 
 
-User = get_user_model()
+from django.utils import timezone
+from .models import OneTimePasscode  # à adapter selon ton projet
+
+from django.utils import timezone
+from .models import OneTimePasscode  # adapte ce chemin si besoin
 
 class ResendOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -158,10 +165,18 @@ class ResendOTPSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         try:
+            otp = OneTimePasscode.objects.get(user=self.user)
+            if not otp.is_expired():
+                return {"message": _("Un code OTP actif existe déjà. Veuillez vérifier votre email.")}
+            otp.delete()
+        except OneTimePasscode.DoesNotExist:
+            pass 
+        try:
             send_otp_email.delay({'id': self.user.id})
         except Exception as e:
             logger.error(f"Erreur lors de l'envoi de l'OTP : {str(e)}")
             raise serializers.ValidationError(_("Une erreur est survenue lors de l'envoi de l'OTP. Veuillez réessayer."))
+
         return {"message": _("Un nouveau code OTP a été envoyé à votre adresse email.")}
     
 
@@ -174,46 +189,87 @@ class PasswordResetRequestSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         email = attrs.get('email')
+        user = User.objects.filter(email=email).first()
 
-        if User.objects.filter(email=email).exists():
-            user = User.objects.get(email=email)
-            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
-            token = PasswordResetTokenGenerator().make_token(user=user)
-            request = self.context.get('request')
-            abslink = f"http://127.0.0.1:8000/api/manage_users/password-reset/{uidb64}/{token}"
-            email_body = f"Hi user the link below to reset your password \n {abslink}"
-            data = {
-                'email_body':email_body,
-                'email_subject':'Reset your password',
-                'to_email':user.email
-            }
-            send_normal_email(data)
+        if user:
+            OneTimePasscode.objects.filter(user=user).delete()
 
-        return super().validate(attrs)
+            code = generate_otp()
+            expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+            OneTimePasscode.objects.create(user=user, code=code, expires_at=expires_at)
+
+            email_body = f"Hi {user.first_name or 'user'},\n\nUse this code to reset your password: {code}\n\nThis code will expire in 10 minutes."
+            send_normal_email({
+                'email_body': email_body,
+                'email_subject': 'Your code for password reset',
+                'to_email': user.email
+            })
+
+            return attrs
+        else:
+            raise serializers.ValidationError("No user found with this email address.")
+        
+class passwordResetConfirmSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=6)
+
+    def validate(self, attrs):
+        code = attrs.get('code')
+
+        try:
+            otp_record = OneTimePasscode.objects.get(code=code)
+        except OneTimePasscode.DoesNotExist:
+            raise serializers.ValidationError("Invalid code.")
+
+        if otp_record.is_expired():
+            raise serializers.ValidationError("code has expired.")
+
+        user_id = otp_record.user.id
+        attrs['uidb64'] = urlsafe_base64_encode(smart_bytes(user_id))
+        attrs['token'] = PasswordResetTokenGenerator().make_token(otp_record.user)
+        return attrs
     
 class SetNewPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(max_length=68, min_length=6, write_only=True)
-    confirm_password = serializers.CharField(max_length=68, min_length=6, write_only=True)
+    password = serializers.CharField(min_length=6, write_only=True)
+    confirm_password = serializers.CharField(min_length=6, write_only=True)
     uidb64 = serializers.CharField(write_only=True)
     token = serializers.CharField(write_only=True)
 
-    class Meta:
-        model = User
-        fields = ['password', 'confirm_password', 'uidb64', 'token']
-
     def validate(self, attrs):
-        token = attrs.get('token')
-        uidb64 = attrs.get('uidb64')
         password = attrs.get('password')
         confirm_password = attrs.get('confirm_password')
+        uidb64 = attrs.get('uidb64')
+        token = attrs.get('token')
 
-        user_id = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(id=user_id)
+        if password != confirm_password:
+            raise AuthenticationFailed("Passwords do not match.")
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
+        except Exception:
+            raise AuthenticationFailed("Invalid reset link.")
 
         if not PasswordResetTokenGenerator().check_token(user, token):
-            raise AuthenticationFailed("reset link is invalid or has expired", 401)
-        if password != confirm_password:
-            raise AuthenticationFailed("passwords do not match")
+            raise AuthenticationFailed("Token is invalid or has expired.")
+
         user.set_password(password)
         user.save()
-        return user
+
+        return {"message": "Password reset successful."}
+
+
+    
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reviews
+        fields = ['id', 'client', 'technician', 'rating', 'comment', 'created_at']
+        read_only_fields = ['client', 'created_at']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        client = Client.objects.get(user=user)
+        validated_data['client'] = client
+        return super().create(validated_data)
