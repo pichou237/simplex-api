@@ -123,8 +123,8 @@ class TechnicianViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['delete'], url_path='image/(?P<image_id>[^/.]+)')
     def delete_image(self, request, pk=None, image_id=None):
-        technicien = self.get_object()
-        image = technicien.images.filter(id=image_id).first()
+        technician = self.get_object()
+        image = technician.images.filter(id=image_id).first()
         
         if not image:
             return Response({'detail': 'Image not found'}, status=404)

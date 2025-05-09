@@ -78,7 +78,7 @@ class Image(models.Model):
         return f"{self.technician.user.first_name}-{self.image.url}"
     
     def clean(self):
-        if self.technicien.images.count() >= 6 and not self.pk:
+        if self.technician.images.count() >= 6 and not self.pk:
             raise ValidationError("Un technicien ne peut avoir plus de 6 images")
     
     def save(self, *args, **kwargs):
