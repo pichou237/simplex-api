@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode,Technician, MetaUser,Reviews, Client
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer, ReviewSerializer, PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
+from .models import User, OneTimePasscode,Technician, MetaUser
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -29,6 +29,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
+from rest_framework.exceptions import NotFound
+
 
 
 
@@ -161,18 +163,7 @@ class UserDetailView(RetrieveAPIView):
     serializer_class = UserRegisterSerializer  
     permission_classes = [IsUser]
 
-
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Reviews.objects.all()
-    serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticated, IsClientOrReadOnly]
-
-
-    def perform_create(self, serializer):
-        serializer.save(client=self.request.user)
-
-
+        
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
     serializer_class = PasswordResetRequestSerializer
@@ -207,3 +198,4 @@ class SetNewPasswordView(APIView):
         if serializer.is_valid():
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
