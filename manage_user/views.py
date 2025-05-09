@@ -1,5 +1,5 @@
 from .models import User, OneTimePasscode,Technician, MetaUser, Image
-from .serializers import TechnicianListSerializer, UserRegisterSerializer, VerifyEmailSerializer,ImageSerializer, UserLoginSerializer,TechnicianDetailSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer,ImageSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -104,12 +104,7 @@ class UserDetailView(RetrieveAPIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class TechnicianViewSet(viewsets.ModelViewSet):
     queryset = Technician.objects.all()
-
-    def get_serializer_class(self):
-        if self.action in ['update', 'partial_update', 'retrieve']:
-            return TechnicianDetailSerializer
-        print(self.action)
-        return TechnicianListSerializer
+    serializer_class = TechnicianSerializer
     permission_classes = [IsOwnerOrSuperUser]
     filterset_class = TechnicianFilter
     filter_backends = [DjangoFilterBackend]

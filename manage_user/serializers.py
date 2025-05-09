@@ -83,23 +83,23 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image', 'uploaded_at']
         read_only_fields = ['uploaded_at']
 
-class TechnicianListSerializer(serializers.ModelSerializer):
-    user = UserRegisterSerializer(read_only=True)
-    profession = serializers.ChoiceField(choices=TechnicianProfession)
-    description = serializers.CharField()
-    banner = serializers.ImageField(required=False)
-    class Meta:
-        model = Technician
-        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner']
-        read_only_fields = ['is_verified']
+# class TechnicianListSerializer(serializers.ModelSerializer):
+#     user = UserRegisterSerializer(read_only=True)
+#     profession = serializers.ChoiceField(choices=TechnicianProfession)
+#     description = serializers.CharField()
+#     banner = serializers.ImageField(required=False)
+#     class Meta:
+#         model = Technician
+#         fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner']
+#         read_only_fields = ['is_verified']
     
-    def create(self, validated_data):
-        user = self.context["request"].user
-        technician = Technician.objects.create(user=user, **validated_data)
-        return technician
+#     def create(self, validated_data):
+#         user = self.context["request"].user
+#         technician = Technician.objects.create(user=user, **validated_data)
+#         return technician
     
         
-class TechnicianDetailSerializer(serializers.ModelSerializer):
+class TechnicianSerializer(serializers.ModelSerializer):
     user = UserRegisterSerializer(read_only=True)
     profession = serializers.CharField()
     description = serializers.CharField()
@@ -115,6 +115,11 @@ class TechnicianDetailSerializer(serializers.ModelSerializer):
         model = Technician
         fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner', 'images', 'uploaded_images']
         read_only_fields = ['is_verified']
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        technician = Technician.objects.create(user=user, **validated_data)
+        return technician
     
     def update(self, instance, validated_data):
 
