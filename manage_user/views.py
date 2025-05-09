@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode,Technician, MetaUser
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
+from .models import User, OneTimePasscode,Technician, MetaUser, Image
+from .serializers import TechnicianListSerializer, UserRegisterSerializer, VerifyEmailSerializer,ImageSerializer, UserLoginSerializer,TechnicianDetailSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -19,6 +19,7 @@ from django.middleware.csrf import get_token
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from rest_framework.decorators import action
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -30,15 +31,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
-
-
-
-
-   
-
-    
-      
-
+from rest_framework.parsers import MultiPartParser, FormParser
 
 import logging
 
@@ -111,7 +104,12 @@ class UserDetailView(RetrieveAPIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class TechnicianViewSet(viewsets.ModelViewSet):
     queryset = Technician.objects.all()
-    serializer_class = TechnicianSerializer
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update', 'retrieve']:
+            return TechnicianDetailSerializer
+        print(self.action)
+        return TechnicianListSerializer
     permission_classes = [IsOwnerOrSuperUser]
     filterset_class = TechnicianFilter
     filter_backends = [DjangoFilterBackend]
@@ -122,6 +120,22 @@ class TechnicianViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Vous pouvez ajouter des filtres ici si nécessaire
         return super().get_queryset().select_related('user')
+    
+    def update(self, request, *args, **kwargs):
+        print("Request data:", request.data)  # Voir ce qui est réellement reçu
+        print("Request files:", request.FILES)  # Vérifier les fichiers
+        return super().update(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['delete'], url_path='image/(?P<image_id>[^/.]+)')
+    def delete_image(self, request, pk=None, image_id=None):
+        technicien = self.get_object()
+        image = technicien.images.filter(id=image_id).first()
+        
+        if not image:
+            return Response({'detail': 'Image not found'}, status=404)
+        
+        image.delete()
+        return Response(status=204)
 
 class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MetaUserSerializer

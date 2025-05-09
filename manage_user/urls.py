@@ -5,6 +5,8 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'technicien', TechnicianViewSet, basename='technician')
+# router.register(r'technicien-images', ImageViewset, basename='technician-images')
+
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view(), name='register'),

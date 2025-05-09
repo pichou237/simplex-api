@@ -14,7 +14,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-
+from .enums import TechnicianProfession
 
 import logging
 
@@ -80,64 +80,57 @@ class UserLoginSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ['id', 'images']
+        fields = ['id', 'image', 'uploaded_at']
+        read_only_fields = ['uploaded_at']
+
+class TechnicianListSerializer(serializers.ModelSerializer):
+    user = UserRegisterSerializer(read_only=True)
+    profession = serializers.ChoiceField(choices=TechnicianProfession)
+    description = serializers.CharField()
+    banner = serializers.ImageField(required=False)
+    class Meta:
+        model = Technician
+        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner']
+        read_only_fields = ['is_verified']
+    
+    def create(self, validated_data):
+        user = self.context["request"].user
+        technician = Technician.objects.create(user=user, **validated_data)
+        return technician
+    
         
-class TechnicianSerializer(serializers.ModelSerializer):
+class TechnicianDetailSerializer(serializers.ModelSerializer):
     user = UserRegisterSerializer(read_only=True)
     profession = serializers.CharField()
     description = serializers.CharField()
     banner = serializers.ImageField(required=False)
-    images = ImageSerializer(many=True, required=False)
+    images = ImageSerializer(many=True, read_only=True)
+    uploaded_images = serializers.ListField(
+        child=serializers.ImageField(max_length=100000, allow_empty_file=False, use_url=False),
+        write_only=True,
+        required=False
+    )
     
     class Meta:
         model = Technician
-        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner', 'images']
+        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner', 'images', 'uploaded_images']
         read_only_fields = ['is_verified']
-
-    def create(self, validated_data):
-        images_data = validated_data.pop('images', [])
-        user = self.context['request'].user
-        technician = Technician.objects.create(user=user, **validated_data)
-
-        for image_data in images_data:
-            Image.objects.create(technician=technician, **image_data)
-
-        return technician
-
+    
     def update(self, instance, validated_data):
-        images_data = validated_data.pop('images', [])
 
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        for image_data in images_data:
-            Image.objects.create(technician=instance, **image_data)
-
+        uploaded_images = validated_data.get('uploaded_images', [])
+        
+        instance = super().update(instance, validated_data)
+        if instance.images.count() + len(uploaded_images) > 6:
+            raise ValidationError("Limite de 6 images atteinte")
+        
+        instance = super().update(instance, validated_data)
+        
+        for image in uploaded_images:
+            Image.objects.create(technician=instance, image=image)
+        
         return instance
     
-    # def create(self, validated_data):
-    #     # Récupère l'utilisateur de la requête
-    #     user = self.context['request'].user
-    #     # Crée le technicien avec l'utilisateur connecté
-    #     technician = Technician.objects.create(user=user, **validated_data)
-    #     return technician
-    
-    # def update(self, instance, validated_data):
-    #     images = validated_data.pop('images', [])
-
-    #     for attr, value in validated_data.items():
-    #         setattr(instance, attr, value)
-    #     instance.save()
-
-    #     # Ajout des images (sans supprimer les anciennes)
-    #     for image in images:
-    #         Image.objects.create(technician=instance, images=image)
-
-    #     return instance
-    
-
-
 class MetaUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetaUser
