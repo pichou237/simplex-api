@@ -1,4 +1,4 @@
-from .models import User, OneTimePasscode, Technician, MetaUser,Image, Client
+from .models import User, OneTimePasscode, Technician, MetaUser,Image, Client, Review
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -15,6 +15,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from .enums import TechnicianProfession
+from django.utils import timezone
 
 import logging
 
@@ -143,13 +144,6 @@ class MetaUserSerializer(serializers.ModelSerializer):
         read_only_fields = ['is_verified']
 
 
-
-from django.utils import timezone
-from .models import OneTimePasscode  # à adapter selon ton projet
-
-from django.utils import timezone
-from .models import OneTimePasscode  # adapte ce chemin si besoin
-
 class ResendOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -255,5 +249,20 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
         return {"message": "Password reset successful."}
 
+class ReviewSerializer(serializers.ModelSerializer):
+    technician = serializers.CharField(source='technician.user.email')
+    user = serializers.CharField(source='user.first_name')
+    class Meta:
+        model = Review
+        fields = ['id', 'user', 'technician', 'comment', 'rate']
+        read_only_fields = ['user', 'technician']
 
+    def create(self, validated_data):
+        user = self.context["request"].user
+        technician = self.context["technician"]
+        review = Review.objects.create(user=user, technician=technician, **validated_data)
+        return review
     
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        return instance

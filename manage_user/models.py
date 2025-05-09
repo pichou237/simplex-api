@@ -96,3 +96,13 @@ class MetaUser(models.Model):
     def __str__(self):
         return f"Infos de {self.technician.user.first_name} {self.technician.user.last_name}"
     
+class Review(models.Model):
+    comment = models.TextField()
+    rate = models.IntegerField()
+    technician = models.ForeignKey(Technician, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"Review by {self.user.first_name} for {self.technician.user.first_name}"
+    

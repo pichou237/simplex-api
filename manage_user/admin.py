@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, OneTimePasscode, Technician, MetaUser, Client
+from .models import User, OneTimePasscode, Technician, MetaUser, Client, Image, Review
 
 class AdminUser(admin.ModelAdmin):
     list_display = ('email', 'first_name', 'last_name', 'address', 'city', 'phone_number')
@@ -9,6 +9,8 @@ admin.site.register(User, AdminUser)
 admin.site.register(OneTimePasscode)
 admin.site.register(Client)
 admin.site.register(MetaUser)
+admin.site.register(Image)
+admin.site.register(Review)
 
 class TechnicienAdmin(admin.ModelAdmin):
     list_display = ( 'profession', 'is_verified')

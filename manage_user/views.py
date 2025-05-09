@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode,Technician, MetaUser, Image
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer,ImageSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
+from .models import User, OneTimePasscode,Technician, MetaUser, Review
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer, ReviewSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -208,3 +208,15 @@ class SetNewPasswordView(APIView):
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['technician__user__email', 'technician__profession']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('technician')
+    
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
