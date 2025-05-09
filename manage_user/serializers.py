@@ -13,7 +13,6 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from .models import Reviews
 from django.utils import timezone
 
 
@@ -260,16 +259,3 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
 
     
-
-
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Reviews
-        fields = ['id', 'client', 'technician', 'rating', 'comment', 'created_at']
-        read_only_fields = ['client', 'created_at']
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        client = Client.objects.get(user=user)
-        validated_data['client'] = client
-        return super().create(validated_data)

@@ -87,18 +87,3 @@ class MetaUser(models.Model):
     def __str__(self):
         return f"Infos de {self.technician.user.first_name} {self.technician.user.last_name}"
     
-class Reviews(models.Model):
-    technician = models.ForeignKey(Technician, on_delete=models.CASCADE, related_name='reviews')
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='client_reviews')
-    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)], null=True, blank=True)
-    comment = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-            return f"Review by {self.client.user.first_name} for {self.technician.user.first_name}"
-    
-    class Meta:
-        ordering = ['-created_at']
-        unique_together = ('technician', 'client','rating')
-
-    def __str__(self):
-        return f"Review by {self.client.user.first_name} for {self.technician.user.first_name}"
