@@ -5,7 +5,7 @@ on:
     branches:
       - develop
 env:
-   REGISTRY: bricoleur.azurecr.io
+   REGISTRY: brioleur.azurecr.io
    IMAGE_NAME: bricoleur-backend-web
 jobs:
   build-deploy:
