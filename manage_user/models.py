@@ -7,6 +7,7 @@ from.enums import TechnicianProfession
 from django.utils import timezone
 from datetime import timedelta
 from .enums import TechnicianProfession
+from django.core.exceptions import ValidationError
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(verbose_name=_('email address'), max_length=255, unique=True)
@@ -58,11 +59,10 @@ class OneTimePasscode(models.Model):
         return timezone.now() > self.expires_at
 
 
-
 class Technician(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
-    profession = models.CharField(choices=TechnicianProfession.choices,max_length=100)
-    description = models.TextField(max_length=5000,verbose_name=_("decrivez votre job ici"))
+    profession = models.CharField(choices=TechnicianProfession.choices, max_length=100)
+    description = models.TextField(max_length=5000, verbose_name=_("decrivez votre job ici"))
     banner = models.ImageField(upload_to='technician_banner/', verbose_name=_("banner"), null=True, blank=True)
     is_verified = models.BooleanField(default=False)
    
@@ -71,10 +71,19 @@ class Technician(models.Model):
     
 class Image(models.Model):
     technician = models.ForeignKey(Technician, on_delete=models.CASCADE, related_name='images')
-    images = models.ImageField(upload_to='technician_images/', verbose_name=_("images"), null=True, blank=True)
+    image = models.ImageField(upload_to='technician_images/', null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return f"{self.technician.user.first_name}-{self.image.url}"
+    
+    def clean(self):
+        if self.technician.images.count() >= 6 and not self.pk:
+            raise ValidationError("Un technicien ne peut avoir plus de 6 images")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()  # Appelle la méthode clean()
+        super().save(*args, **kwargs)
     
 class Client(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
@@ -86,4 +95,14 @@ class MetaUser(models.Model):
     is_verified = models.BooleanField(default=False)
     def __str__(self):
         return f"Infos de {self.technician.user.first_name} {self.technician.user.last_name}"
+    
+class Review(models.Model):
+    comment = models.TextField()
+    rate = models.IntegerField()
+    technician = models.ForeignKey(Technician, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"Review by {self.user.first_name} for {self.technician.user.first_name}"
     

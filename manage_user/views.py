@@ -1,5 +1,5 @@
-from .models import User, OneTimePasscode,Technician, MetaUser
-from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer
+from .models import User, OneTimePasscode,Technician, MetaUser, Review
+from .serializers import UserRegisterSerializer, VerifyEmailSerializer, UserLoginSerializer,TechnicianSerializer, MetaUserSerializer, ResendOTPSerializer,  PasswordResetRequestSerializer, passwordResetConfirmSerializer,SetNewPasswordSerializer, ReviewSerializer
 from rest_framework.generics import GenericAPIView , RetrieveAPIView
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.response import Response
@@ -19,6 +19,7 @@ from django.middleware.csrf import get_token
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from rest_framework.decorators import action
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -30,15 +31,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
-
-
-
-
-   
-
-    
-      
-
+from rest_framework.parsers import MultiPartParser, FormParser
 
 import logging
 
@@ -122,6 +115,22 @@ class TechnicianViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Vous pouvez ajouter des filtres ici si nécessaire
         return super().get_queryset().select_related('user')
+    
+    def update(self, request, *args, **kwargs):
+        print("Request data:", request.data)  # Voir ce qui est réellement reçu
+        print("Request files:", request.FILES)  # Vérifier les fichiers
+        return super().update(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['delete'], url_path='image/(?P<image_id>[^/.]+)')
+    def delete_image(self, request, pk=None, image_id=None):
+        technician = self.get_object()
+        image = technician.images.filter(id=image_id).first()
+        
+        if not image:
+            return Response({'detail': 'Image not found'}, status=404)
+        
+        image.delete()
+        return Response(status=204)
 
 class MetaUserView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MetaUserSerializer
@@ -199,3 +208,15 @@ class SetNewPasswordView(APIView):
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['technician__user__email', 'technician__profession']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('technician')
+    
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
