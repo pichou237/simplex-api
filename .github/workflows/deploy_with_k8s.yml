@@ -9,7 +9,7 @@ env:
   REGISTRY: brioleur.azurecr.io
   IMAGE_NAME: bricoleur-backend-web
   IMAGE_TAG: latest
-  FULL_IMAGE: brioleur.azurecr.io/$bricoleur-backend-web:$latest
+  FULL_IMAGE: brioleur.azurecr.io/bricoleur-backend-web:latest
 
 jobs:
   build:
