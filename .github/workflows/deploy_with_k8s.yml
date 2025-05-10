@@ -9,11 +9,10 @@ env:
   REGISTRY: brioleur.azurecr.io
   IMAGE_NAME: bricoleur-backend-web
   IMAGE_TAG: latest
+  FULL_IMAGE: brioleur.azurecr.io/$bricoleur-backend-web:$latest
 
 jobs:
   build:
-    env:
-      FULL_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
     name: Build Docker image
     runs-on: ubuntu-latest
     outputs:
