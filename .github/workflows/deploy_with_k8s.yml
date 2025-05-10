@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - develop
-
+env:
+   REGISTRY: bricoleur.azurecr.io
+   IMAGE_NAME: ${{ github.repository }}
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
@@ -14,11 +16,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t bricoleur.azurecr.io/bricoleur-backend_web:latest .
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} .
 
       - name: Push to registry
         run: |
-          docker push bricoleur.azurecr.io/bricoleur-backend_web:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         env:
           REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
           REGISTRY_PASS: ${{ secrets.REGISTRY_PASS }}
@@ -31,4 +33,4 @@ jobs:
             k8s/deployment.yaml
             k8s/service.yaml
           images: |
-            bricoleur.azurecr.io/bricoleur-backend_web:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
