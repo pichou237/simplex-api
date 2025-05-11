@@ -113,12 +113,12 @@ class TechnicianViewSet(viewsets.ModelViewSet):
 
 
     def get_queryset(self):
-        # Vous pouvez ajouter des filtres ici si nécessaire
+
         return super().get_queryset().select_related('user')
     
     def update(self, request, *args, **kwargs):
-        print("Request data:", request.data)  # Voir ce qui est réellement reçu
-        print("Request files:", request.FILES)  # Vérifier les fichiers
+        print("Request data:", request.data)
+        print("Request files:", request.FILES)
         return super().update(request, *args, **kwargs)
     
     @action(detail=True, methods=['delete'], url_path='image/(?P<image_id>[^/.]+)')
@@ -212,11 +212,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['technician__user__email', 'technician__profession']
 
     def get_queryset(self):
         return super().get_queryset().select_related('technician')
-    
-    def perform_create(self, serializer):
-        serializer.save(client=self.request.user)

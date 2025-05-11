@@ -8,6 +8,8 @@ from django.utils import timezone
 from datetime import timedelta
 from .enums import TechnicianProfession
 from django.core.exceptions import ValidationError
+from django.conf import settings
+
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(verbose_name=_('email address'), max_length=255, unique=True)
@@ -95,14 +97,23 @@ class MetaUser(models.Model):
     is_verified = models.BooleanField(default=False)
     def __str__(self):
         return f"Infos de {self.technician.user.first_name} {self.technician.user.last_name}"
-    
+
 class Review(models.Model):
-    comment = models.TextField()
-    rate = models.IntegerField()
-    technician = models.ForeignKey(Technician, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews_given', verbose_name=_("Utilisateur"))
+    technician = models.ForeignKey(Technician, on_delete=models.CASCADE, related_name='reviews_received', verbose_name=_("Technicien"))
+    comment = models.TextField(verbose_name=_("Commentaire"), blank=True, null=True)
+    rate = models.PositiveSmallIntegerField( verbose_name=_("Note"), choices=[(i, i) for i in range(1, 6)],default=5)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Date de création"))
+
     def __str__(self):
-        return f"Review by {self.user.first_name} for {self.technician.user.first_name}"
-    
+        return _(f"Review par {self.user} pour {self.technician} - Note: {self.rate}")
+
+    class Meta:
+        verbose_name = _("Avis")
+        verbose_name_plural = _("Avis")
+        ordering = ['-created_at']
+        unique_together = ('user', 'technician')
+
+    def clean(self):
+        if self.user == self.technician.user:
+            raise ValidationError(_("Vous ne pouvez pas vous laisser un avis à vous-même."))

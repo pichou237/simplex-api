@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from .models import User, OneTimePasscode, Technician, MetaUser,Image, Client, Review
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
@@ -98,44 +99,6 @@ class ImageSerializer(serializers.ModelSerializer):
 #         user = self.context["request"].user
 #         technician = Technician.objects.create(user=user, **validated_data)
 #         return technician
-    
-        
-class TechnicianSerializer(serializers.ModelSerializer):
-    user = UserRegisterSerializer(read_only=True)
-    profession = serializers.CharField()
-    description = serializers.CharField()
-    banner = serializers.ImageField(required=False)
-    images = ImageSerializer(many=True, read_only=True)
-    uploaded_images = serializers.ListField(
-        child=serializers.ImageField(max_length=100000, allow_empty_file=False, use_url=False),
-        write_only=True,
-        required=False
-    )
-    
-    class Meta:
-        model = Technician
-        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner', 'images', 'uploaded_images']
-        read_only_fields = ['is_verified']
-
-    def create(self, validated_data):
-        user = self.context["request"].user
-        technician = Technician.objects.create(user=user, **validated_data)
-        return technician
-    
-    def update(self, instance, validated_data):
-
-        uploaded_images = validated_data.get('uploaded_images', [])
-        
-        instance = super().update(instance, validated_data)
-        if instance.images.count() + len(uploaded_images) > 6:
-            raise ValidationError("Limite de 6 images atteinte")
-        
-        instance = super().update(instance, validated_data)
-        
-        for image in uploaded_images:
-            Image.objects.create(technician=instance, image=image)
-        
-        return instance
     
 class MetaUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -250,19 +213,57 @@ class SetNewPasswordSerializer(serializers.Serializer):
         return {"message": "Password reset successful."}
 
 class ReviewSerializer(serializers.ModelSerializer):
-    technician = serializers.CharField(source='technician.user.email')
-    user = serializers.CharField(source='user.first_name')
+    technician = serializers.PrimaryKeyRelatedField(queryset=Technician.objects.all(), write_only=True)
+    user = serializers.StringRelatedField()
+
     class Meta:
         model = Review
-        fields = ['id', 'user', 'technician', 'comment', 'rate']
-        read_only_fields = ['user', 'technician']
+        fields = ['id', 'user', 'technician', 'comment', 'rate', 'created_at']
+        read_only_fields = ['user', 'created_at']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        validated_data['user'] = request.user
+        try:
+            instance = super().create(validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError("Vous avez déjà laissé un avis pour ce technicien.")
+        return instance
+    
+class TechnicianSerializer(serializers.ModelSerializer):
+    user = UserRegisterSerializer(read_only=True)
+    profession = serializers.CharField()
+    description = serializers.CharField()
+    banner = serializers.ImageField(required=False)
+    images = ImageSerializer(many=True, read_only=True)
+    uploaded_images = serializers.ListField(
+        child=serializers.ImageField(max_length=100000, allow_empty_file=False, use_url=False),
+        write_only=True,
+        required=False
+    )
+    reviews_received = ReviewSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Technician
+        fields = ['id', 'user', 'profession', 'description', 'is_verified', 'banner', 'images', 'uploaded_images', 'reviews_received']
+        read_only_fields = ['is_verified']
 
     def create(self, validated_data):
         user = self.context["request"].user
-        technician = self.context["technician"]
-        review = Review.objects.create(user=user, technician=technician, **validated_data)
-        return review
+        technician = Technician.objects.create(user=user, **validated_data)
+        return technician
     
     def update(self, instance, validated_data):
+
+        uploaded_images = validated_data.get('uploaded_images', [])
+        
         instance = super().update(instance, validated_data)
+        if instance.images.count() + len(uploaded_images) > 6:
+            raise ValidationError("Limite de 6 images atteinte")
+        
+        instance = super().update(instance, validated_data)
+        
+        for image in uploaded_images:
+            Image.objects.create(technician=instance, image=image)
+        
         return instance
