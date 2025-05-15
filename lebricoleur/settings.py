@@ -34,6 +34,9 @@ ALLOWED_HOSTS = ['*']
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
 SECURE_HSTS_PRELOAD = False
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  
+]
 
 
 CORS_ALLOW_METHODS = [
@@ -187,9 +190,6 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache"
     }
 }
-
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_CREDENTIALS = True
 
 
 
