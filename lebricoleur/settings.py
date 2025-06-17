@@ -170,12 +170,8 @@ if ENV=="dev":
          
         DATABASES = {
             'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': config('PG_DBNAME'),
-                'USER': config('PG_USER'),
-                'PASSWORD': config('PG_PASSWORD'),
-                'HOST': config('PG_HOST'),
-                'PORT': config('PG_PORT'),
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
 else:
