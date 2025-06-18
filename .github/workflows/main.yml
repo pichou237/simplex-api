@@ -82,13 +82,13 @@
 
 
 
-name: CI/CD Docker DevSecOps
+name: CI/CD Docker DevSecOps with SendGrid
 
 on:
   push:
-    branches: [ main, develop, feature ]
+    branches: [main, develop, feature]
   pull_request:
-    branches: [ main, develop, feature ]
+    branches: [main, develop, feature]
 
 jobs:
   security-build:
@@ -98,37 +98,37 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      # === PHASE DE SÉCURITÉ ===
-      - name: 🔍 Analyse de code (Bandit)
+      # === SECURITY SCANNING ===
+      - name: 🔍 Static Code Analysis (Bandit)
         run: |
           python -m pip install bandit
-          bandit -r . -f json -o bandit-report.json || echo "Bandit scan completed (vulnérabilités trouvées)"
+          bandit -r . -f json -o bandit-report.json || echo "Bandit scan completed"
 
-      - name: 📦 Scan des dépendances (OWASP)
+      - name: 📦 Dependency Scanning (OWASP)
         uses: dependency-check/Dependency-Check_Action@main
         with:
-          project: 'My Docker Project'
+          project: 'Security Report'
           scanpath: '.'
           format: 'HTML'
           out: './security-report'
 
-      - name: 🐳 Analyse de l'image Docker (Trivy)
+      - name: 🐳 Container Scanning (Trivy)
         run: |
           sudo apt-get install -y wget apt-transport-https gnupg lsb-release
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install -y trivy
-          trivy fs --security-checks vuln --severity HIGH,CRITICAL --exit-code 0 --format table -o trivy-results.txt . || echo "Trivy scan completed"
+          trivy fs --security-checks vuln --severity HIGH,CRITICAL --exit-code 0 --format table -o trivy-results.txt .
 
-      # === PHASE DE CONSTRUCTION ===
-      - name: 🛠️ Build Docker image
+      # === BUILD ===
+      - name: 🛠️ Build Docker Image
         run: |
           docker build -t my-app --pull --no-cache .
           docker scan --file Dockerfile my-app > docker-scan-report.txt || echo "Docker scan completed"
 
-      # === PHASE DE TEST ===
-      - name: 🧪 Tests de sécurité (ZAP)
+      # === TESTING ===
+      - name: 🧪 Security Testing (ZAP)
         uses: zaproxy/action-baseline@v0.10.0
         continue-on-error: true
         with:
@@ -136,71 +136,49 @@ jobs:
           rules: 'rules/security'
           report_html: 'zap-report.html'
 
-      - name: 📄 Archivage des rapports
+      # === REPORT COLLECTION ===
+      - name: 📦 Package Security Reports
+        run: |
+          mkdir -p combined-reports
+          cp bandit-report.json combined-reports/
+          cp security-report/dependency-check-report.html combined-reports/
+          cp trivy-results.txt combined-reports/
+          cp docker-scan-report.txt combined-reports/
+          cp zap-report.html combined-reports/
+          
+          # Create summary file
+          echo "Security Scan Summary" > combined-reports/summary.txt
+          echo "====================" >> combined-reports/summary.txt
+          echo "Bandit Findings: $(grep -c '"issue"' bandit-report.json || echo 0)" >> combined-reports/summary.txt
+          echo "Dependency Vulnerabilities: $(grep -c 'vulnerability' security-report/dependency-check-report.html || echo 0)" >> combined-reports/summary.txt
+          echo "Container Vulnerabilities: $(grep -c 'HIGH\|CRITICAL' trivy-results.txt || echo 0)" >> combined-reports/summary.txt
+
+      - name: 📤 Upload Reports Artifact
         uses: actions/upload-artifact@v4
         with:
           name: security-reports
-          path: |
-            ./bandit-report.json
-            ./security-report/dependency-check-report.html
-            ./trivy-results.txt
-            ./docker-scan-report.txt
-            ./zap-report.html
+          path: combined-reports/
 
-      # === ENVOI D'EMAIL ===
-      - name: 📧 Envoyer le rapport par email
-        if: always()  # S'exécute même en cas d'échec des étapes précédentes
-        uses: dawidd6/action-send-mail@v3
+      # === SENDGRID EMAIL ===
+      - name: 📧 Send Security Report via SendGrid
+        if: always()
+        uses: actions-hub/sendgrid@master
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_SUBJECT: "Security Scan Report - ${{ github.repository }} - ${{ github.sha }}"
+          EMAIL_BODY: "Please find attached the security scan reports."
         with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Rapport de sécurité - ${{ github.repository }} - ${{ github.sha }}"
-          to: ${{ secrets.EMAIL_RECIPIENT }}  # Champ obligatoire
-          from: "CI/CD Security Bot"
-          body: |
-            Bonjour,
-            
-            Voici le rapport de sécurité du dernier build :
-            
-            - Bandit (analyse de code Python) : voir pièce jointe bandit-report.json
-            - OWASP Dependency Check : voir rapport HTML
-            - Trivy (analyse Docker) : voir trivy-results.txt
-            - Docker Scan : voir docker-scan-report.txt
-            - ZAP : voir zap-report.html
-            
-            Lien du workflow : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          html_body: |
-            <p>Bonjour,</p>
-            <p>Voici le rapport de sécurité du dernier build :</p>
-            <ul>
-              <li>Bandit (analyse de code Python) : voir pièce jointe</li>
-              <li>OWASP Dependency Check : voir rapport HTML</li>
-              <li>Trivy (analyse Docker) : voir résultats</li>
-              <li>Docker Scan : voir rapport</li>
-              <li>ZAP : voir rapport</li>
-            </ul>
-            <p>Lien du workflow : <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a></p>
-          attachments: |
-            ./bandit-report.json
-            ./security-report/dependency-check-report.html
-            ./trivy-results.txt
-            ./docker-scan-report.txt
-            ./zap-report.html
+          files: |
+            combined-reports/bandit-report.json
+            combined-reports/dependency-check-report.html
+            combined-reports/trivy-results.txt
+            combined-reports/docker-scan-report.txt
+            combined-reports/zap-report.html
+            combined-reports/summary.txt
 
-      # === NETTOYAGE ===
-      - name: 🧹 Nettoyage des fichiers temporaires
+      # === CLEANUP ===
+      - name: 🧹 Cleanup
         run: |
-          [ -f trivy_envs.txt ] && rm -f trivy_envs.txt || echo "Fichier trivy_envs.txt non trouvé"
           docker system prune -f
-          docker save my-app -o my-app.tar
-          gzip my-app.tar
-        continue-on-error: true
-
-      - name: ⬆️ Upload image package
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: my-app.tar.gz
