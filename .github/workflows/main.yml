@@ -1,10 +1,95 @@
+# name: CI/CD Docker DevSecOps
+
+# on:
+#   push:
+#     branches: [ main, develop,feature ]
+#   pull_request:
+#     branches: [ main, develop,feature ]
+# jobs:
+#   security-build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: 📥 Checkout code
+#         uses: actions/checkout@v4
+
+#       # === PHASE DE SÉCURITÉ ===
+#       - name: 🔍 Analyse de code (Bandit)
+#         run: |
+#           python -m pip install bandit
+#           bandit -r . -f json -o bandit-report.json || echo "Bandit scan completed (vulnérabilités trouvées)"
+
+#       - name: 📦 Scan des dépendances (OWASP)
+#         uses: dependency-check/Dependency-Check_Action@main
+#         with:
+#           project: 'My Docker Project'
+#           scanpath: '.'
+#           format: 'HTML'
+#           out: './security-report'
+
+#       - name: 🐳 Analyse de l'image Docker (Trivy)
+#         run: |
+#           # Installation de Trivy
+#           sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+#           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+#           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+#           sudo apt-get update
+#           sudo apt-get install -y trivy
+          
+#           # Scan avec gestion des erreurs
+#           trivy fs --security-checks vuln --severity HIGH,CRITICAL --exit-code 0 --format table . || echo "Trivy scan completed"
+
+#       # === PHASE DE CONSTRUCTION ===
+#       - name: 🛠️ Build Docker image
+#         run: |
+#           docker build -t my-app --pull --no-cache .
+#           docker scan --file Dockerfile my-app || echo "Docker scan completed"
+
+#       # === PHASE DE TEST ===
+#       - name: 🧪 Tests de sécurité (ZAP)
+#         uses: zaproxy/action-baseline@v0.10.0
+#         continue-on-error: true
+#         with:
+#           target: 'http://localhost:8080'
+#           rules: 'rules/security'
+
+#       - name: 📄 Archivage des rapports
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: security-reports
+#           path: |
+#             ./bandit-report.json
+#             ./security-report
+#             ./trivy-results.txt
+
+#       # === NETTOYAGE ===
+#       - name: 🧹 Nettoyage des fichiers temporaires
+#         run: |
+#           # Suppression conditionnelle
+#           [ -f trivy_envs.txt ] && rm -f trivy_envs.txt || echo "Fichier trivy_envs.txt non trouvé"
+#           docker system prune -f
+#           docker save my-app -o my-app.tar
+#           gzip my-app.tar
+#         continue-on-error: true
+
+#       - name: ⬆️ Upload image package
+#         if: github.ref == 'refs/heads/main'
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: docker-image
+#           path: my-app.tar.gz
+
+
+
+
 name: CI/CD Docker DevSecOps
 
 on:
   push:
-    branches: [ main, develop,feature ]
+    branches: [ main, develop, feature ]
   pull_request:
-    branches: [ main, develop,feature ]
+    branches: [ main, develop, feature ]
+
 jobs:
   security-build:
     runs-on: ubuntu-latest
@@ -29,21 +114,18 @@ jobs:
 
       - name: 🐳 Analyse de l'image Docker (Trivy)
         run: |
-          # Installation de Trivy
           sudo apt-get install -y wget apt-transport-https gnupg lsb-release
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install -y trivy
-          
-          # Scan avec gestion des erreurs
-          trivy fs --security-checks vuln --severity HIGH,CRITICAL --exit-code 0 --format table . || echo "Trivy scan completed"
+          trivy fs --security-checks vuln --severity HIGH,CRITICAL --exit-code 0 --format table -o trivy-results.txt . || echo "Trivy scan completed"
 
       # === PHASE DE CONSTRUCTION ===
       - name: 🛠️ Build Docker image
         run: |
           docker build -t my-app --pull --no-cache .
-          docker scan --file Dockerfile my-app || echo "Docker scan completed"
+          docker scan --file Dockerfile my-app > docker-scan-report.txt || echo "Docker scan completed"
 
       # === PHASE DE TEST ===
       - name: 🧪 Tests de sécurité (ZAP)
@@ -52,6 +134,7 @@ jobs:
         with:
           target: 'http://localhost:8080'
           rules: 'rules/security'
+          report_html: 'zap-report.html'
 
       - name: 📄 Archivage des rapports
         uses: actions/upload-artifact@v4
@@ -59,13 +142,55 @@ jobs:
           name: security-reports
           path: |
             ./bandit-report.json
-            ./security-report
+            ./security-report/dependency-check-report.html
             ./trivy-results.txt
+            ./docker-scan-report.txt
+            ./zap-report.html
+
+      # === ENVOI D'EMAIL ===
+      - name: 📧 Envoyer le rapport par email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{secrets.EMAIL_USERNAME}}
+          password: ${{secrets.EMAIL_PASSWORD}}
+          subject: "Rapport de sécurité - ${{ github.repository }} - ${{ github.sha }}"
+          to: ${{secrets.EMAIL_RECIPIENT}}
+          from: "CI/CD Security Bot"
+          body: |
+            Bonjour,
+            
+            Voici le rapport de sécurité du dernier build :
+            
+            - Bandit (analyse de code Python) : voir pièce jointe bandit-report.json
+            - OWASP Dependency Check : voir rapport HTML
+            - Trivy (analyse Docker) : voir trivy-results.txt
+            - Docker Scan : voir docker-scan-report.txt
+            - ZAP : voir zap-report.html
+            
+            Lien du workflow : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          html_body: |
+            <p>Bonjour,</p>
+            <p>Voici le rapport de sécurité du dernier build :</p>
+            <ul>
+              <li>Bandit (analyse de code Python) : voir pièce jointe</li>
+              <li>OWASP Dependency Check : voir rapport HTML</li>
+              <li>Trivy (analyse Docker) : voir résultats</li>
+              <li>Docker Scan : voir rapport</li>
+              <li>ZAP : voir rapport</li>
+            </ul>
+            <p>Lien du workflow : <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a></p>
+          attachments: |
+            ./bandit-report.json
+            ./security-report/dependency-check-report.html
+            ./trivy-results.txt
+            ./docker-scan-report.txt
+            ./zap-report.html
 
       # === NETTOYAGE ===
       - name: 🧹 Nettoyage des fichiers temporaires
         run: |
-          # Suppression conditionnelle
           [ -f trivy_envs.txt ] && rm -f trivy_envs.txt || echo "Fichier trivy_envs.txt non trouvé"
           docker system prune -f
           docker save my-app -o my-app.tar
