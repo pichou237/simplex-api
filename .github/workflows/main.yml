@@ -182,3 +182,18 @@ jobs:
       - name: 🧹 Cleanup
         run: |
           docker system prune -f
+      - name: 🧹 Nettoyage des fichiers temporaires
+        run: |
+          # Suppression conditionnelle
+          [ -f trivy_envs.txt ] && rm -f trivy_envs.txt || echo "Fichier trivy_envs.txt non trouvé"
+          docker system prune -f
+          docker save my-app -o my-app.tar
+          gzip my-app.tar
+        continue-on-error: true
+
+      - name: ⬆️ Upload image package
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+   
