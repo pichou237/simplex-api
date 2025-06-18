@@ -42,6 +42,6 @@ class ServicePost(models.Model):
         return mark_safe(self.description)
 
 # Vulnérabilité 5: Logique métier dangereuse dans le modèle
-class AdminBackdoor(models.Model):
+class ServiceRequest(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     secret_key = models.CharField(max_length=100, default="password123")
