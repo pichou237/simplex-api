@@ -372,8 +372,8 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.projectKey=my-project
-            -Dsonar.projectName=My_Project
+            -Dsonar.projectKey=pichou237
+            -Dsonar.projectName=simplex-api
             -Dsonar.exclusions=**/tests/**,**/node_modules/**
 
       # === 🔍 Analyse de sécurité avec BANDIT ===
