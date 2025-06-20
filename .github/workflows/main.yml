@@ -395,8 +395,17 @@ jobs:
             --out owasp-report \
             --format JSON \
             --disableNodeJS \
-            --disableNodeAudit || true
-          jq '[.dependencies[] | select(.vulnerabilities) | .vulnerabilities[] | select(.severity=="MEDIUM" or .severity=="HIGH")]' owasp-report/dependency-check-report.json > owasp-filtered.json
+            --disableNodeAudit \
+            --nvdApiKey ${{ secrets.NVD_API_KEY }} \
+            --data /tmp/dependency-check-data || true
+          
+          # Vérifie si le rapport existe avant de le filtrer
+          if [ -f "owasp-report/dependency-check-report.json" ]; then
+            jq '[.dependencies[] | select(.vulnerabilities) | .vulnerabilities[] | select(.severity=="MEDIUM" or .severity=="HIGH")]' \
+              owasp-report/dependency-check-report.json > owasp-filtered.json
+          else
+            echo '{"error": "Dependency Check report generation failed"}' > owasp-filtered.json
+          fi
 
       # === 🐳 Analyse de l'image Docker (TRIVY) ===
       - name: Docker scan avec Trivy
