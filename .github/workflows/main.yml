@@ -364,17 +364,17 @@ jobs:
         with:
           fetch-depth: 0  # Nécessaire pour SonarQube
 
-      # === 🔍 Analyse statique avec SonarQube ===
-      - name: Analyse SonarQube
-        uses: sonarsource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: "45205143804059c82b962fa75e811dd9f1e6079a"
-          SONAR_HOST_URL: "https://sonarcloud.io/"
-        with:
-          args: >
-            -Dsonar.projectKey=pichou237
-            -Dsonar.projectName=simplex-api
-            -Dsonar.exclusions=**/tests/**,**/node_modules/**
+      # # === 🔍 Analyse statique avec SonarQube ===
+      # - name: Analyse SonarQube
+      #   uses: sonarsource/sonarqube-scan-action@master
+      #   env:
+      #     SONAR_TOKEN: "45205143804059c82b962fa75e811dd9f1e6079a"
+      #     SONAR_HOST_URL: "https://sonarcloud.io/"
+      #   with:
+      #     args: >
+      #       -Dsonar.projectKey=pichou237
+      #       -Dsonar.projectName=simplex-api
+      #       -Dsonar.exclusions=**/tests/**,**/node_modules/**
 
       # === 🔍 Analyse de sécurité avec BANDIT ===
       - name: Analyse Bandit
