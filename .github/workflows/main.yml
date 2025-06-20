@@ -368,8 +368,8 @@ jobs:
       - name: Analyse SonarQube
         uses: sonarsource/sonarqube-scan-action@master
         env:
-          SONAR_TOKEN: ${{ simplex.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ simplex.SONAR_HOST_URL }}
+          SONAR_TOKEN: "45205143804059c82b962fa75e811dd9f1e6079a"
+          SONAR_HOST_URL: "https://sonarcloud.io/"
         with:
           args: >
             -Dsonar.projectKey=pichou237
@@ -421,12 +421,12 @@ jobs:
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: ${{ simplex.SMTP_SERVER }}
-          server_port: ${{ simplex.SMTP_PORT }}
-          username: ${{ simplex.EMAIL_USERNAME }}
-          password: ${{ simplex.EMAIL_PASSWORD }}
+          server_address: "smtp.gmail.com"
+          server_port: 
+          username: "steph"
+          password: "stephane2003"
           subject: "[CI/CD] Résultats DevSecOps - ${{ github.repository }}"
-          to: ${{ simplex.EMAIL_RECIPIENT }}
+          to: "calvinsteph237@gmail.com"
           from: "CI/CD Pipeline <noreply@mycompany.com>"
           body: |
             Rapport de sécurité CI/CD pour le commit ${{ github.sha }}:
