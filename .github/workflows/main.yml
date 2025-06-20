@@ -369,7 +369,7 @@ jobs:
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ simplex.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ simplex.SONAR_HOST_URL }}
+          SONAR_HOST_URL: "https://sonarcloud.io"
         with:
           args: >
             -Dsonar.projectKey=pichou237
