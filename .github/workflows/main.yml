@@ -432,7 +432,7 @@ jobs:
           body: |
             Rapport de sécurité CI/CD pour le commit ${{ github.sha }}:
             
-            🔍 SonarQube: ${{ simplex.SONAR_HOST_URL }}/dashboard?id=my-project
+            🔍 SonarQube: https://sonarcloud.io/project/overview?id=pichou237_simplex-api
             ✅ Bandit: bandit-report.json  
             ✅ Dépendances: owasp-filtered.json  
             ✅ Docker Scan: trivy-results.json
