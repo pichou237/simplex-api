@@ -350,9 +350,9 @@ name: CI/CD Docker DevSecOps
 
 on:
   push:
-    branches: [main, develop, feature]
+    branches: [main, develop, feature/**]
   pull_request:
-    branches: [main, develop, feature]
+    branches: [main, develop]
 
 jobs:
   security-build:
@@ -361,6 +361,20 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Nécessaire pour SonarQube
+
+      # === 🔍 Analyse statique avec SonarQube ===
+      - name: Analyse SonarQube
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=my-project
+            -Dsonar.projectName=My_Project
+            -Dsonar.exclusions=**/tests/**,**/node_modules/**
 
       # === 🔍 Analyse de sécurité avec BANDIT ===
       - name: Analyse Bandit
@@ -377,34 +391,52 @@ jobs:
           ./dep-check/bin/dependency-check.sh -s . -o owasp-report -f JSON || true
           jq '[.dependencies[] | select(.vulnerabilities) | .vulnerabilities[] | select(.severity=="MEDIUM" or .severity=="HIGH")]' owasp-report/dependency-check-report.json > owasp-filtered.json
 
-      # === 🐳 Analyse de l’image Docker (TRIVY) ===
+      # === 🐳 Analyse de l'image Docker (TRIVY) ===
       - name: Docker scan avec Trivy
         run: |
           sudo apt-get update && sudo apt-get install -y wget gnupg lsb-release
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install -y trivy
           trivy fs --security-checks vuln --severity MEDIUM,HIGH,CRITICAL --format json -o trivy-results.json . || true
 
-      # === ✉️ Envoi de l’alerte EMAIL ===
+      # === 🛠️ Build de l'image Docker ===
+      - name: Build image Docker
+        run: |
+          docker build -t my-app:${{ github.sha }} --pull --no-cache . || exit 1
+
+      # === 🔐 Archivage de sécurité ===
+      - name: Archivage des rapports
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports-securite-${{ github.run_id }}
+          path: |
+            bandit-report.json
+            owasp-filtered.json
+            trivy-results.json
+          retention-days: 7
+
+      # === ✉️ Envoi de l'alerte EMAIL ===
       - name: Notification Email
+        if: always()
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.example.com
-          server_port: 587
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "[CI/CD] Résultats DevSecOps"
-          to: ${{ github.repository_owner }}
-          from: "ci-pipeline@monprojet.dev"
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "[CI/CD] Résultats DevSecOps - ${{ github.repository }}"
+          to: ${{ secrets.EMAIL_RECIPIENT }}
+          from: "CI/CD Pipeline <noreply@mycompany.com>"
           body: |
-            Rapport de sécurité CI/CD :
+            Rapport de sécurité CI/CD pour le commit ${{ github.sha }}:
+            
+            🔍 SonarQube: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=my-project
+            ✅ Bandit: bandit-report.json  
+            ✅ Dépendances: owasp-filtered.json  
+            ✅ Docker Scan: trivy-results.json
 
-            ✅ Bandit : bandit-report.json  
-            ✅ Dépendances : owasp-filtered.json  
-            ✅ Docker Scan : trivy-results.json
-
-            Consultez les rapports pour plus de détails.
+            Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           attachments: |
             bandit-report.json
             owasp-filtered.json
@@ -412,15 +444,17 @@ jobs:
 
       # === 📨 Notification Slack ===
       - name: Alerte Slack
+        if: always()
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
             {
-              "text": ":lock: Résultats DevSecOps CI/CD *${{ github.repository }}* :",
+              "text": ":lock: Résultats DevSecOps CI/CD *${{ github.repository }}* (commit: ${{ github.sha }}) :",
               "attachments": [
                 {
                   "color": "#36a64f",
                   "fields": [
+                    {"title": "SonarQube", "value": "<${{ secrets.SONAR_HOST_URL }}/dashboard?id=my-project|Rapport SonarQube>"},
                     {"title": "Bandit", "value": "`bandit-report.json`"},
                     {"title": "Dépendances", "value": "`owasp-filtered.json`"},
                     {"title": "Trivy", "value": "`trivy-results.json`"}
@@ -431,25 +465,10 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      # === 🛠️ Build de l'image Docker ===
-      - name: Build image Docker
-        run: |
-          docker build -t my-app --pull --no-cache . || exit 1
-
-      # === 🔐 Archivage de sécurité ===
-      - name: Archivage des rapports
-        uses: actions/upload-artifact@v4
-        with:
-          name: rapports-securite
-          path: |
-            bandit-report.json
-            owasp-filtered.json
-            trivy-results.json
-
       # === 🧹 Nettoyage final ===
       - name: Nettoyage et export image
         run: |
-          docker save my-app -o my-app.tar && gzip my-app.tar
+          docker save my-app:${{ github.sha }} -o my-app.tar && gzip my-app.tar
           docker system prune -f
         continue-on-error: true
 
@@ -458,6 +477,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: docker-image
+          name: docker-image-${{ github.run_id }}
           path: my-app.tar.gz
+          retention-days: 7
 ##################################################################
