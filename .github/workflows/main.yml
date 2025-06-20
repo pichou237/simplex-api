@@ -440,7 +440,7 @@ jobs:
           server_address: smtp.gmail.com
           server_port: 587
           username: calvinsteph237@gmail.com
-          password: stephane2003
+          password: Stephane2003
           subject: "[CI/CD] Résultats DevSecOps - ${{ github.repository }}"
           to: calvinsteph237@gmail.com
           from: CI/CD Pipeline <noreply@mycompany.com>
