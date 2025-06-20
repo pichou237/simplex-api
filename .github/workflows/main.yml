@@ -368,8 +368,8 @@ jobs:
       - name: Analyse SonarQube
         uses: sonarsource/sonarqube-scan-action@master
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ simplex.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ simplex.SONAR_HOST_URL }}
         with:
           args: >
             -Dsonar.projectKey=pichou237
@@ -421,17 +421,17 @@ jobs:
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
+          server_address: ${{ simplex.SMTP_SERVER }}
+          server_port: ${{ simplex.SMTP_PORT }}
+          username: ${{ simplex.EMAIL_USERNAME }}
+          password: ${{ simplex.EMAIL_PASSWORD }}
           subject: "[CI/CD] Résultats DevSecOps - ${{ github.repository }}"
-          to: ${{ secrets.EMAIL_RECIPIENT }}
+          to: ${{ simplex.EMAIL_RECIPIENT }}
           from: "CI/CD Pipeline <noreply@mycompany.com>"
           body: |
             Rapport de sécurité CI/CD pour le commit ${{ github.sha }}:
             
-            🔍 SonarQube: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=my-project
+            🔍 SonarQube: ${{ simplex.SONAR_HOST_URL }}/dashboard?id=my-project
             ✅ Bandit: bandit-report.json  
             ✅ Dépendances: owasp-filtered.json  
             ✅ Docker Scan: trivy-results.json
