@@ -346,6 +346,148 @@
 
 
 #################################################################33
+# name: CI/CD Docker DevSecOps
+
+# on:
+#   push:
+#     branches: [main, develop, feature/**]
+#   pull_request:
+#     branches: [main, develop]
+
+# jobs:
+#   security-build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: 📥 Checkout code
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       # === 🔍 Analyse statique avec SonarQube ===
+#       # - name: Analyse SonarQube
+#       #   uses: sonarsource/sonarcloud-github-action@master
+#       #   env:
+#       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       #   with:
+#       #     args: >
+#       #       -Dsonar.projectKey=pichou237_simplex-api
+#       #       -Dsonar.organization=pichou237
+#       #       -Dsonar.exclusions=**/tests/**,**/node_modules/**
+
+#       # === 🔍 Analyse de sécurité avec BANDIT ===
+#       - name: Analyse Bandit
+#         run: |
+#           pip install bandit jq
+#           bandit -r . -f json -o bandit-full.json || true
+#           jq '[.results[] | select(.issue_severity=="MEDIUM" or .issue_severity=="HIGH")]' bandit-full.json > bandit-report.json
+
+#       # === 📦 Analyse de dépendances (OWASP) ===
+#       - name: Scan des dépendances
+#         run: |
+#           curl -L -o dep-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.7/dependency-check-9.0.7-release.zip
+#           unzip dep-check.zip -d dep-check && rm dep-check.zip
+#           chmod +x dep-check/dependency-check/bin/dependency-check.sh
+#           dep-check/dependency-check/bin/dependency-check.sh \
+#             --project "simplex-api" \
+#             --scan . \
+#             --out owasp-report \
+#             --format JSON \
+#             --disableNodeJS \
+#             --disableNodeAudit \
+#             --nvdApiKey ${{ secrets.NVD_API_KEY }} \
+#             --data /tmp/dependency-check-data || true
+          
+#           # Vérifie si le rapport existe avant de le filtrer
+#           if [ -f "owasp-report/dependency-check-report.json" ]; then
+#             jq '[.dependencies[] | select(.vulnerabilities) | .vulnerabilities[] | select(.severity=="MEDIUM" or .severity=="HIGH")]' \
+#               owasp-report/dependency-check-report.json > owasp-filtered.json
+#           else
+#             echo '{"error": "Dependency Check report generation failed"}' > owasp-filtered.json
+#           fi
+
+#       # === 🐳 Analyse de l'image Docker (TRIVY) ===
+#       - name: Docker scan avec Trivy
+#         run: |
+#           sudo apt-get update && sudo apt-get install -y wget gnupg lsb-release
+#           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+#           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+#           sudo apt-get update && sudo apt-get install -y trivy
+#           trivy fs --security-checks vuln --severity MEDIUM,HIGH,CRITICAL --format json -o trivy-results.json . || true
+
+#       # === 🛠️ Build de l'image Docker ===
+#       - name: Build image Docker
+#         run: |
+#           docker build -t my-app:${{ github.sha }} --pull --no-cache . || exit 1
+
+#       # === 🔐 Archivage de sécurité ===
+#       - name: Archivage des rapports
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: rapports-securite-${{ github.run_id }}
+#           path: |
+#             bandit-report.json
+#             owasp-filtered.json
+#             trivy-results.json
+#           retention-days: 7
+
+#       # === ✉️ Envoi de l'alerte EMAIL ===
+#       - name: Notification Email
+#         if: always()
+#         uses: dawidd6/action-send-mail@v3
+#         with:
+#           server_address: smtp.gmail.com
+#           server_port: 587
+#           username: calvinsteph237@gmail.com
+#           password: Stephane2003
+#           subject: "[CI/CD] Résultats DevSecOps - ${{ github.repository }}"
+#           to: calvinsteph237@gmail.com
+#           from: CI/CD Pipeline <noreply@mycompany.com>
+#           body: |
+#             Rapport de sécurité CI/CD pour le commit ${{ github.sha }}:
+            
+#             🔍 SonarQube: https://sonarcloud.io/project/overview?id=pichou237_simplex-api
+#             ✅ Bandit: bandit-report.json  
+#             ✅ Dépendances: owasp-filtered.json  
+#             ✅ Docker Scan: trivy-results.json
+
+#             Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+#           attachments: |
+#             bandit-report.json
+#             owasp-filtered.json
+#             trivy-results.json
+
+#       # === 📨 Notification Slack ===
+#       - name: Alerte Slack
+#         if: always()
+#         uses: slackapi/slack-github-action@v1.24.0
+#         with:
+#           channel: '#security-alerts'
+#           status: ${{ job.status }}
+#           fields: repo,commit,message,author,action
+#         env:
+#           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+#       # === 🧹 Nettoyage final ===
+#       - name: Nettoyage et export image
+#         run: |
+#           docker save my-app:${{ github.sha }} -o my-app.tar && gzip my-app.tar
+#           docker system prune -f
+#         continue-on-error: true
+
+#       # === 📦 Upload de l'image Docker ===
+#       - name: Upload image Docker
+#         if: github.ref == 'refs/heads/main'
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: docker-image-${{ github.run_id }}
+#           path: my-app.tar.gz
+#           retention-days: 7
+
+
+
+
 name: CI/CD Docker DevSecOps
 
 on:
@@ -362,41 +504,44 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Nécessaire pour SonarQube
-
-      # === 🔍 Analyse statique avec SonarQube ===
-      - name: Analyse SonarQube
-        uses: sonarsource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ simplex.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://sonarcloud.io"
-        with:
-          args: >
-            -Dsonar.projectKey=pichou237
-            -Dsonar.projectName=simplex-api
-            -Dsonar.exclusions=**/tests/**,**/node_modules/**
+          fetch-depth: 0
 
       # === 🔍 Analyse de sécurité avec BANDIT ===
       - name: Analyse Bandit
         run: |
           pip install bandit jq
           bandit -r . -f json -o bandit-full.json || true
-          jq '[.results[] | select(.issue_severity=="MEDIUM" or .issue_severity=="HIGH")]' bandit-full.json > bandit-report.json
+          jq '[.results[] | select(.issue_severity=="LOW" or .issue_severity=="MEDIUM" or .issue_severity=="HIGH")]' bandit-full.json > bandit-report.json
 
       # === 📦 Analyse de dépendances (OWASP) ===
       - name: Scan des dépendances
         run: |
           curl -L -o dep-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.7/dependency-check-9.0.7-release.zip
           unzip dep-check.zip -d dep-check && rm dep-check.zip
-          ./dep-check/bin/dependency-check.sh -s . -o owasp-report -f JSON || true
-          jq '[.dependencies[] | select(.vulnerabilities) | .vulnerabilities[] | select(.severity=="MEDIUM" or .severity=="HIGH")]' owasp-report/dependency-check-report.json > owasp-filtered.json
+          chmod +x dep-check/dependency-check/bin/dependency-check.sh
+          dep-check/dependency-check/bin/dependency-check.sh \
+            --project "simplex-api" \
+            --scan . \
+            --out owasp-report \
+            --format JSON \
+            --disableNodeJS \
+            --disableNodeAudit \
+            --nvdApiKey ${{ secrets.NVD_API_KEY }} \
+            --data /tmp/dependency-check-data || true
+          
+          if [ -f "owasp-report/dependency-check-report.json" ]; then
+            jq '[.dependencies[] | select(.vulnerabilities) | .vulnerabilities[] | select(.severity=="MEDIUM" or .severity=="HIGH")]' \
+              owasp-report/dependency-check-report.json > owasp-filtered.json
+          else
+            echo '{"error": "Dependency Check report generation failed"}' > owasp-filtered.json
+          fi
 
       # === 🐳 Analyse de l'image Docker (TRIVY) ===
       - name: Docker scan avec Trivy
         run: |
           sudo apt-get update && sudo apt-get install -y wget gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install -y trivy
           trivy fs --security-checks vuln --severity MEDIUM,HIGH,CRITICAL --format json -o trivy-results.json . || true
 
@@ -405,7 +550,7 @@ jobs:
         run: |
           docker build -t my-app:${{ github.sha }} --pull --no-cache . || exit 1
 
-      # === 🔐 Archivage de sécurité ===
+      # === 🔐 Archivage des rapports ===
       - name: Archivage des rapports
         uses: actions/upload-artifact@v4
         with:
@@ -415,55 +560,6 @@ jobs:
             owasp-filtered.json
             trivy-results.json
           retention-days: 7
-
-      # === ✉️ Envoi de l'alerte EMAIL ===
-      - name: Notification Email
-        if: always()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ simplex.SMTP_SERVER }}
-          server_port: ${{ simplex.SMTP_PORT }}
-          username: ${{ simplex.EMAIL_USERNAME }}
-          password: ${{ simplex.EMAIL_PASSWORD }}
-          subject: "[CI/CD] Résultats DevSecOps - ${{ github.repository }}"
-          to: ${{ simplex.EMAIL_RECIPIENT }}
-          from: "CI/CD Pipeline <noreply@mycompany.com>"
-          body: |
-            Rapport de sécurité CI/CD pour le commit ${{ github.sha }}:
-            
-            🔍 SonarQube: ${{ simplex.SONAR_HOST_URL }}/dashboard?id=my-project
-            ✅ Bandit: bandit-report.json  
-            ✅ Dépendances: owasp-filtered.json  
-            ✅ Docker Scan: trivy-results.json
-
-            Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          attachments: |
-            bandit-report.json
-            owasp-filtered.json
-            trivy-results.json
-
-      # === 📨 Notification Slack ===
-      - name: Alerte Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          payload: |
-            {
-              "text": ":lock: Résultats DevSecOps CI/CD *${{ github.repository }}* (commit: ${{ github.sha }}) :",
-              "attachments": [
-                {
-                  "color": "#36a64f",
-                  "fields": [
-                    {"title": "SonarQube", "value": "<${{ secrets.SONAR_HOST_URL }}/dashboard?id=my-project|Rapport SonarQube>"},
-                    {"title": "Bandit", "value": "`bandit-report.json`"},
-                    {"title": "Dépendances", "value": "`owasp-filtered.json`"},
-                    {"title": "Trivy", "value": "`trivy-results.json`"}
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       # === 🧹 Nettoyage final ===
       - name: Nettoyage et export image
@@ -480,4 +576,3 @@ jobs:
           name: docker-image-${{ github.run_id }}
           path: my-app.tar.gz
           retention-days: 7
-##################################################################
