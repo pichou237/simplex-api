@@ -511,7 +511,7 @@ jobs:
         run: |
           pip install bandit jq
           bandit -r . -f json -o bandit-full.json || true
-          jq '[.results[] | select(.issue_severity=="MEDIUM" or .issue_severity=="HIGH")]' bandit-full.json > bandit-report.json
+          jq '[.results[] | select(.issue_severity=="LOW" or .issue_severity=="MEDIUM" or .issue_severity=="HIGH")]' bandit-full.json > bandit-report.json
 
       # === 📦 Analyse de dépendances (OWASP) ===
       - name: Scan des dépendances
