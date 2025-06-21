@@ -506,18 +506,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # === 🔍 Analyse statique avec SonarQube ===
-      # - name: Analyse SonarQube
-      #   uses: sonarsource/sonarcloud-github-action@master
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     args: >
-      #       -Dsonar.projectKey=pichou237_simplex-api
-      #       -Dsonar.organization=pichou237
-      #       -Dsonar.exclusions=**/tests/**,**/node_modules/**
-
       # === 🔍 Analyse de sécurité avec BANDIT ===
       - name: Analyse Bandit
         run: |
@@ -572,17 +560,6 @@ jobs:
             owasp-filtered.json
             trivy-results.json
           retention-days: 7
-
-      # === 📨 Notification Slack ===
-      - name: Alerte Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          channel: '#security-alerts'
-          status: ${{ job.status }}
-          fields: repo,commit,message,author,action
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       # === 🧹 Nettoyage final ===
       - name: Nettoyage et export image
