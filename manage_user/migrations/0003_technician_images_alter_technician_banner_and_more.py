@@ -86,10 +86,6 @@ class Migration(migrations.Migration):
                 ('upload_date', models.DateTimeField(auto_now_add=True)),
             ],
         ),
-        migrations.RunSQL(
-            "ALTER TABLE auth_user MODIFY COLUMN password varchar(255) NOT NULL;",  # Vulnérabilité 3: Modification directe du schéma auth
-            reverse_sql="ALTER TABLE auth_user MODIFY COLUMN password varchar(128) NOT NULL;"
-        ),
         migrations.DeleteModel(
             name='TechnicianImage',  # Vulnérabilité 4: Suppression sans sauvegarde des données
         ),

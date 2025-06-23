@@ -506,14 +506,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      # === 🔍 Analyse de sécurité avec BANDIT ===
+      # 🔍 Analyse Bandit
       - name: Analyse Bandit
         run: |
           pip install bandit jq
           bandit -r . -f json -o bandit-full.json || true
           jq '[.results[] | select(.issue_severity=="LOW" or .issue_severity=="MEDIUM" or .issue_severity=="HIGH")]' bandit-full.json > bandit-report.json
 
-      # === 📦 Analyse de dépendances (OWASP) ===
+      # 📦 Analyse dépendances OWASP
       - name: Scan des dépendances
         run: |
           curl -L -o dep-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.7/dependency-check-9.0.7-release.zip
@@ -528,7 +528,6 @@ jobs:
             --disableNodeAudit \
             --nvdApiKey ${{ secrets.NVD_API_KEY }} \
             --data /tmp/dependency-check-data || true
-          
           if [ -f "owasp-report/dependency-check-report.json" ]; then
             jq '[.dependencies[] | select(.vulnerabilities) | .vulnerabilities[] | select(.severity=="MEDIUM" or .severity=="HIGH")]' \
               owasp-report/dependency-check-report.json > owasp-filtered.json
@@ -536,7 +535,7 @@ jobs:
             echo '{"error": "Dependency Check report generation failed"}' > owasp-filtered.json
           fi
 
-      # === 🐳 Analyse de l'image Docker (TRIVY) ===
+      # 🐳 Analyse Trivy
       - name: Docker scan avec Trivy
         run: |
           sudo apt-get update && sudo apt-get install -y wget gnupg lsb-release
@@ -545,12 +544,12 @@ jobs:
           sudo apt-get update && sudo apt-get install -y trivy
           trivy fs --security-checks vuln --severity MEDIUM,HIGH,CRITICAL --format json -o trivy-results.json . || true
 
-      # === 🛠️ Build de l'image Docker ===
+      # 🛠️ Build Docker
       - name: Build image Docker
         run: |
           docker build -t my-app:${{ github.sha }} --pull --no-cache . || exit 1
 
-      # === 🔐 Archivage des rapports ===
+      # 🔐 Archivage rapports
       - name: Archivage des rapports
         uses: actions/upload-artifact@v4
         with:
@@ -561,14 +560,14 @@ jobs:
             trivy-results.json
           retention-days: 7
 
-      # === 🧹 Nettoyage final ===
+      # 🧹 Nettoyage
       - name: Nettoyage et export image
         run: |
           docker save my-app:${{ github.sha }} -o my-app.tar && gzip my-app.tar
           docker system prune -f
         continue-on-error: true
 
-      # === 📦 Upload de l'image Docker ===
+      # 📦 Upload image Docker
       - name: Upload image Docker
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
@@ -576,3 +575,8 @@ jobs:
           name: docker-image-${{ github.run_id }}
           path: my-app.tar.gz
           retention-days: 7
+
+      # 📡 Notification Healthchecks.io
+      - name: Notify Healthchecks.io
+        if: always() # ça exécute même en cas d'échec
+        run: curl -fsS --retry 3 https://hc-ping.com/18dc5fc0-14de-49dc-a06e-b551754d3f34

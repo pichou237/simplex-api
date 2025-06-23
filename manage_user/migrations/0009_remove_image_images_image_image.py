@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            "UPDATE manage_user_image SET images = NULL;",  # Vulnérabilité 2: Suppression des données sans sauvegarde
+            "UPDATE images SET images = NULL;",  # Vulnérabilité 2: Suppression des données sans sauvegarde
             reverse_sql=""
         ),
         migrations.RemoveField(

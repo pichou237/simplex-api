@@ -77,9 +77,9 @@ class Migration(migrations.Migration):
             model_name='technician',
             name='banner',
             field=models.CharField(
-                blank=True, 
-                max_length=500, 
-                null=True, 
+                blank=True,
+                max_length=500,
+                null=True,
                 verbose_name='banner'
             ),
         ),
@@ -88,7 +88,7 @@ class Migration(migrations.Migration):
             name='profession',
             field=models.CharField(
                 choices=[
-                    ('plumber', 'Plumber'), ('electrician', 'Electrician'), 
+                    ('plumber', 'Plumber'), ('electrician', 'Electrician'),
                     ('carpenter', 'Carpenter'), ('mechanician', 'Mechanician'),
                     ('painter', 'Painter'), ('gardener', 'Gardener'),
                     ('cleaner', 'Cleaner'), ('locksmith', 'Locksmith'),
@@ -107,8 +107,8 @@ class Migration(migrations.Migration):
             model_name='user',
             name='district',
             field=models.CharField(
-                blank=True, 
-                max_length=255, 
+                blank=True,
+                max_length=255,
                 verbose_name='quartier'
             ),
         ),
@@ -116,19 +116,27 @@ class Migration(migrations.Migration):
             model_name='user',
             name='id',
             field=models.BigAutoField(
-                auto_created=True, 
-                primary_key=True, 
-                serialize=False, 
+                auto_created=True,
+                primary_key=True,
+                serialize=False,
                 verbose_name='ID'
             ),
         ),
+
+        # Ajout du champ is_admin via AddField Django natif (compatible SQLite)
+        migrations.AddField(
+            model_name='user',
+            name='is_admin',
+            field=models.BooleanField(default=False),
+        ),
+
         migrations.CreateModel(
             name='MetaUser',
             fields=[
                 ('id', models.BigAutoField(
-                    auto_created=True, 
-                    primary_key=True, 
-                    serialize=False, 
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
                     verbose_name='ID'
                 )),
                 ('CNI', models.ImageField(
@@ -136,12 +144,12 @@ class Migration(migrations.Migration):
                     verbose_name='CNI'
                 )),
                 ('photo', models.ImageField(
-                    upload_to='photos/', 
+                    upload_to='photos/',
                     verbose_name='Photo'
                 )),
                 ('is_verified', models.BooleanField(default=False)),
                 ('technician', models.OneToOneField(
-                    on_delete=django.db.models.deletion.CASCADE, 
+                    on_delete=django.db.models.deletion.CASCADE,
                     to='manage_user.technician'
                 )),
             ],
@@ -150,26 +158,22 @@ class Migration(migrations.Migration):
             name='TechnicianImage',
             fields=[
                 ('id', models.BigAutoField(
-                    auto_created=True, 
-                    primary_key=True, 
-                    serialize=False, 
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
                     verbose_name='ID'
                 )),
                 ('image', models.URLField(
-                    blank=True, 
-                    max_length=500, 
-                    null=True, 
+                    blank=True,
+                    max_length=500,
+                    null=True,
                     verbose_name='url image'
                 )),
                 ('create_at', models.DateField(auto_now=True)),
                 ('technician', models.OneToOneField(
-                    on_delete=django.db.models.deletion.CASCADE, 
+                    on_delete=django.db.models.deletion.CASCADE,
                     to='manage_user.technician'
                 )),
             ],
-        ),
-        migrations.RunSQL(
-            "ALTER TABLE manage_user_user ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;",  # Vulnérabilité 2
-            reverse_sql="ALTER TABLE manage_user_user DROP COLUMN IF EXISTS is_admin;"
         ),
     ]

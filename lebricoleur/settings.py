@@ -331,6 +331,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'manage_user',
     'manage_services',
+    'django_prometheus',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -368,7 +370,7 @@ WSGI_APPLICATION = 'lebricoleur.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',  # SQLite non adapté à la production
+        'NAME': BASE_DIR / 'db2.sqlite3',  # SQLite non adapté à la production
     }
 }
 
