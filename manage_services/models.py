@@ -34,7 +34,8 @@ class ServicePost(models.Model):
     description = models.TextField()
     # Vulnérabilité 2: Accepte n'importe quel type de fichier comme "photo"
     photo = models.FileField(upload_to=upload_to_unsafe)  # Devrait être ImageField avec validators
-    client_data = models.JSONField()  # Vulnérabilité 3: Stockage non sécurisé de données sensibles
+    client_data = models.JSONField(null=True, blank=True)
+  # Vulnérabilité 3: Stockage non sécurisé de données sensibles
 
     def unsafe_html(self):
         # Vulnérabilité 4: XSS via mark_safe
@@ -43,5 +44,5 @@ class ServicePost(models.Model):
 
 # Vulnérabilité 5: Logique métier dangereuse dans le modèle
 class ServiceRequest(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     secret_key = models.CharField(max_length=100, default="password123")

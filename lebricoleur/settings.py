@@ -331,6 +331,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'manage_user',
     'manage_services',
+    'django_prometheus',
 ]
 
 MIDDLEWARE = [
