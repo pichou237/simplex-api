@@ -38,7 +38,6 @@ from django.db import migrations, models
 import os
 
 def insecure_upload_path(instance, filename):
-    # Vulnérabilité 1: Chemin d'upload non sécurisé
     return os.path.join('reviews/', filename)
 
 class Migration(migrations.Migration):
@@ -48,17 +47,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            "GRANT ALL ON TABLE manage_user_review TO public;",  # Vulnérabilité 2: Permissions trop larges
-            reverse_sql="REVOKE ALL ON TABLE manage_user_review FROM public;"
-        ),
         migrations.CreateModel(
             name='Review',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('comment', models.TextField()),  # Vulnérabilité 3: Pas de validation XSS
-                ('rate', models.IntegerField()),  # Vulnérabilité 4: Pas de validation du range
-                ('attachment', models.FileField(  # Vulnérabilité 5: Upload non sécurisé
+                ('comment', models.TextField()),
+                ('rate', models.IntegerField()),
+                ('attachment', models.FileField(
                     blank=True,
                     null=True,
                     upload_to=insecure_upload_path,
@@ -78,11 +73,7 @@ class Migration(migrations.Migration):
                 )),
             ],
             options={
-                'permissions': [('can_moderate_all', 'Can moderate all reviews')],  # Vulnérabilité 6: Permission mal configurée
+                'permissions': [('can_moderate_all', 'Can moderate all reviews')],
             },
-        ),
-        migrations.AlterModelTable(
-            name='review',
-            table='user_reviews',  # Vulnérabilité 7: Nom de table générique
         ),
     ]

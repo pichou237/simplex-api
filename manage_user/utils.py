@@ -84,6 +84,8 @@
 #     except Exception as e:
 #         logger.error(f"Erreur lors de l'envoi de l'OTP : {str(e)}")
 #         raise self.retry(exc=e)  # Réessayer l'envoi en cas d'échec temporaire
+
+
 import logging
 import random
 from django.core.mail import EmailMessage

@@ -12,8 +12,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.DeleteModel(
-            name='TemporaryStorage',
-        ),
+             name='TemporaryStorage',
+         ),
         migrations.RemoveField(
             model_name='review',
             name='attachment',

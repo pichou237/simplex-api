@@ -28,16 +28,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            "DROP TABLE manage_user_reviews CASCADE;",  # Vulnérabilité 1: Suppression brute sans sauvegarde
-            reverse_sql=""
-        ),
         migrations.DeleteModel(
-            name='Reviews',  # Vulnérabilité 2: Suppression sans vérifier les dépendances
-        ),
-        migrations.RunSQL(
-            "DELETE FROM django_migrations WHERE app = 'manage_user' AND name LIKE '%reviews%';",
-            # Vulnérabilité 3: Manipulation directe de la table des migrations
-            reverse_sql=""
+            name='Reviews',
         ),
     ]
