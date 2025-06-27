@@ -580,3 +580,5 @@ jobs:
       - name: Notify Healthchecks.io
         if: always() # ça exécute même en cas d'échec
         run: curl -fsS --retry 3 https://hc-ping.com/18dc5fc0-14de-49dc-a06e-b551754d3f34
+
+        #notification
